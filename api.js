@@ -72,7 +72,7 @@ exports.setApp = function(app, client)
 
         if(results.length > 0)
         {
-            id = results[0].UserID;
+            id = results[0].insertedId;
             fn = results[0].FirstName;
             ln = results[0].LastName;
 
@@ -97,7 +97,7 @@ exports.setApp = function(app, client)
 
     app.post('/api/searchcards', async (req, res, next) =>
     {
-        // incoming: userId, search
+        // incoming: userId, search, jwtToken
         // outgoing: results[], error
 
         var error = '';
@@ -143,5 +143,49 @@ exports.setApp = function(app, client)
 
         var ret = { results:_ret, error:error, jwtToken: refreshedToken };
         res.status(200).json(ret);
+    });
+
+    app.post('/api/register', async (req, res, next) =>
+    {
+        // incoming: login, password, firstName, lastName
+        // outgoing: id, firstName, lastName, error
+
+        var error = '';
+
+        const { login, password, firstName, lastName } = req.body;
+
+        const db = client.db('COP4331Cards');
+
+        // Check if user already exists
+        const existingUser = await db.collection('Users').find({Login:login}).toArray();
+
+        if(existingUser.length > 0)
+        {
+            var ret = { id:-1, firstName:'', lastName:'', error:'User already exists' };
+            res.status(200).json(ret);
+            return;
+        }
+
+        try
+        {
+            // Insert new user
+            const newUser = {
+                Login: login,
+                Password: password,
+                FirstName: firstName,
+                LastName: lastName
+            };
+
+            const result = await db.collection('Users').insertOne(newUser);
+            const id = result.insertedId;
+
+            var ret = { userId:id, firstName:firstName, lastName:lastName, error:'' };
+            res.status(200).json(ret);
+        }
+        catch(e)
+        {
+            var ret = { id:-1, firstName:'', lastName:'', error:e.toString() };
+            res.status(200).json(ret);
+        }
     });
 }
