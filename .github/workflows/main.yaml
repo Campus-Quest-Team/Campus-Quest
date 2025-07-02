@@ -37,7 +37,7 @@ jobs:
           cd /var/repo-dump/Campus-Quest
           sudo git pull origin main
           sudo npm install
-          sed '8 s/nodemon/node' package.json
+          sed '8 s/nodemon/node/' package.json
           echo "${{ secrets.MONGODB_CONNECTION }}" > '.env'
           echo "${{ secrets.JWT_ACCESS }}" >> '.env'
           echo "${{ secrets.GMAIL_RESEND_KEY }}" >> '.env'
