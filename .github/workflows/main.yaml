@@ -35,7 +35,7 @@ jobs:
         run: |
           sshpass -p "${SSH_KEY}" ssh -o StrictHostKeyChecking=no ${SSH_USERNAME}@${SSH_HOST} << 'EOF'
           cd /var/repo-dump/Campus-Quest
-          sudo git pull
+          sudo git pull origin main
           sudo npm install
           sed '8 s/nodemon/node/' package.json
           echo "${{ secrets.MONGODB_CONNECTION }}" > '.env'
