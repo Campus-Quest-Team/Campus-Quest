@@ -1,0 +1,55 @@
+name: CI/CD Pipeline
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Set up Node.jobs
+      uses: actions/setup-node@v2
+      with:
+        node-version: 22.16.0
+    - name: Install dependencies
+      run: npm install
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+      - name: Deploy to DigitalOcean Droplet
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+        run: |
+          sshpass -p "${SSH_KEY}" ssh -o StrictHostKeyChecking=no ${SSH_USERNAME}@${SSH_HOST} << 'EOF'
+          cd /var/repo-dump/Campus-Quest
+          sudo git pull
+          sudo npm install
+          sed 's/nodemon/node' package.json
+          cd ..
+          echo "${{ secrets.MONGODB_CONNECTION }}" > '.env'
+          echo "${{ secrets.JWT_ACCESS }}" >> '.env'
+          echo "${{ secrets.GMAIL_RESEND_KEY }}" >> '.env'
+          echo "${{ secrets.R2_ACCESS }}" >> '.env'
+          echo "${{ secrets.R2_ENDPOINT }}" >> '.env'
+          echo "${{ secrets.R2_PUB_URL }}" >> '.env'
+          echo "${{ secrets.R2_SECRET_ACCESS }}" >> '.env'
+          cd ./Campus-Quest/frontend
+          sudo npm install
+          sudo npm run build
+          sudo cp -r dist/* /var/www/html
+          sudo systemctl restart nginx
+          sudo pm2 restart "express-server"
+          EOF
