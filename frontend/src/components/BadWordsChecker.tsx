@@ -1,6 +1,6 @@
 //catches offensive and dirty words. sorry you have to see this.
-//if i'm adding slurs to the list i'm only adding the ones i can reclaim.
-//we can add onto it later, maybe make a disclaimer to the prof that you gotta put them somewhere to check them :shrug:
+//this is more a proof of concept for the project.
+//honestly i don't recommend adding anything heinous to this list
 //it's kinda inevitable for social media sites that someone's gonna try to say them
 
 const badWords = ['fuck', 'shit', 'bitch', 'whore', 'clit', 'penis', 'vagina'];
