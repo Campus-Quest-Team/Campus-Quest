@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { buildPath } from './Path';
-import BadWordsChecker from './BadWordsChecker'
+import BadWordsChecker from './BadWordsChecker';
+import { jwtDecode } from 'jwt-decode';
+
 
 /*
 This is a template for the frontend Register function:
@@ -22,6 +24,13 @@ frontend sends following packet to /api/register:
     "email": <email string>
 }
 */
+
+interface UserPayload {
+    userId: number;
+    firstName: string;
+    lastName: string;
+    iat: number;
+}
 
 function Register() {
     const [message, setMessage] = useState('');
@@ -70,14 +79,35 @@ function Register() {
         let sentPacket = { login:registerName, password:registerPassword, firstName:registerFName, lastName:registerLName, email:registerEmail };
         let packetJSON = JSON.stringify(sentPacket);
 
+        //complete regular registration operations
         try {
             const responsePacket = await fetch(buildPath('api/register'), {method:'POST', body:packetJSON, headers:{'Content-Type':'application/json'}});
 
             let parsedPacket = JSON.parse(await responsePacket.text());
-            //a successful response should return an empty error
-            if(!(parsedPacket.error == '')) {
+            //a successful response should not have an error field
+            if(!(parsedPacket.error === undefined)) {
                 setMessage(parsedPacket.error);
                 return;
+            }
+
+            const { accessToken } = parsedPacket;
+
+            const decoded = jwtDecode<UserPayload>(accessToken);
+
+            //send JWT's userId field to email-send in api
+            try {
+                let emailToken = decoded;
+                let userId = emailToken.userId;
+                let emailPacket = JSON.stringify({login:registerName, email:registerEmail, userId:userId, jwtToken:accessToken});
+
+                const emailSend = await fetch(buildPath('api/email-send'), {method:'POST', body:emailPacket, headers:{'Content-Type':'application/json'}});
+                let emailResponse = JSON.parse(await emailSend.text());
+                if(!(emailResponse.error == '')) {
+                    setMessage(emailResponse.error);
+                    return;
+                }
+            } catch (emailError:any) {
+                alert(emailError.toString());
             }
 
             setMessage('Account creation successful! Please check your email to verify your account. Happy Questing!');

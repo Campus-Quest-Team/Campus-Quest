@@ -3,7 +3,7 @@
 //honestly i don't recommend adding anything heinous to this list
 //it's kinda inevitable for social media sites that someone's gonna try to say them
 
-const badWords = ['fuck', 'shit', 'bitch', 'whore', 'clit', 'penis', 'vagina'];
+const badWords = ['fuck', 'shit', 'bitch', 'penis', 'vagina'];
 
 const createBadWordRegex = (badWords : string[]) => {
     /* quick rundown on what this is doing:
