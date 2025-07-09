@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# A script to test the full post submission workflow.
+# It logs in, fetches the current quest, and then submits a post for it.
+
+# --- Configuration ---
+API_BASE_URL="http://localhost:5001/api"
+CURRENT_QUEST_URL="$API_BASE_URL/currentQuest"
+SUBMIT_POST_URL="$API_BASE_URL/submitPost"
+LOGIN_SCRIPT="./apiTestLogin.sh"
+MEDIA_FILE="frontend/public/image.png"
+CAPTION="Wow I'm so quirky UwU"
+
+# --- Step 1: Login to get credentials ---
+echo "Attempting to log in..."
+
+if [ ! -f "$LOGIN_SCRIPT" ]; then
+    echo "Error: Login script not found at '$LOGIN_SCRIPT'"
+    exit 1
+fi
+
+source "$LOGIN_SCRIPT"
+
+if [ -z "$JWT_TOKEN" ] || [ -z "$USER_ID" ]; then
+    echo "Failed to obtain JWT token or User ID from login script."
+    exit 1
+fi
+
+echo "Login successful. User ID: $USER_ID"
+echo "-----------------------------------"
+echo ""
+
+# --- Step 2: Get the current quest ---
+echo "Fetching the current quest..."
+current_quest_response=$(curl -s -X GET $CURRENT_QUEST_URL)
+
+QUEST_ID=$(echo "$current_quest_response" | jq -r '.currentQuest.questId')
+QUEST_DESCRIPTION=$(echo "$current_quest_response" | jq -r '.questDescription')
+
+if [ -z "$QUEST_ID" ] || [ "$QUEST_ID" == "null" ]; then
+    echo "Error: Could not retrieve questId from /api/currentQuest."
+    echo "Response: $current_quest_response"
+    exit 1
+fi
+
+echo "Current Quest ID: $QUEST_ID"
+echo "Current Quest Description: $QUEST_DESCRIPTION"
+echo "-----------------------------------"
+echo ""
+
+
+# --- Step 3: Call submitPost endpoint ---
+echo "Submitting a post for the current quest..."
+
+submit_post_response=$(curl -s -X POST \
+  -F "file=@$MEDIA_FILE" \
+  -F "userId=$USER_ID" \
+  -F "questId=$QUEST_ID" \
+  -F "caption=$CAPTION" \
+  -F "questDescription=$QUEST_DESCRIPTION" \
+  -F "jwtToken=$JWT_TOKEN" \
+  $SUBMIT_POST_URL)
+
+
+# --- Output ---
+echo "submitPost response:"
+echo "$submit_post_response" | jq '.'
+
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to parse submitPost response with jq."
+    echo "Raw response: $submit_post_response"
+    exit 1
+fi
+
+echo ""
+echo "Script finished." 

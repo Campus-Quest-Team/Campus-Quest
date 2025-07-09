@@ -66,6 +66,27 @@ exports.setApp = function(app, client)
 
     const getDatabase = () => client.db('campusQuest');
 
+    const getPresignedUrl = async (key) => {
+        if (!key) {
+            return null;
+        }
+
+        if (key === 'images/pfp-default.png') {
+            return `${process.env.R2_PUBLIC_URL}/${key}`;
+        }
+
+        try {
+            const command = new GetObjectCommand({
+                Bucket: 'campus-quest-media',
+                Key: key,
+            });
+            return await getSignedUrl(r2Client, command, { expiresIn: 900 });
+        } catch (e) {
+            console.error(`Failed to get signed URL for key: ${key}`, e);
+            return null;
+        }
+    };
+
     // Helper function for uploading files to R2
     const uploadFileToR2 = async (file, userId, questId) => {
         if (!file) {
@@ -75,9 +96,9 @@ exports.setApp = function(app, client)
         // Determine destination folder and reject unsupported file types
         let folder = '';
         if (file.mimetype.startsWith('image/')) {
-            folder = 'image';
+            folder = 'images';
         } else if (file.mimetype.startsWith('video/')) {
-            folder = 'video';
+            folder = 'videos';
         } else {
             throw new Error('Unsupported file type. Please upload an image or video.');
         }
@@ -88,6 +109,33 @@ exports.setApp = function(app, client)
         const objectKey = `${folder}/${baseFileName}`;
 
         // Upload to R2
+        const uploadParams = {
+            Bucket: 'campus-quest-media',
+            Key: objectKey,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+        };
+
+        const command = new PutObjectCommand(uploadParams);
+        await r2Client.send(command);
+
+        return objectKey;
+    };
+
+    // Helper function for uploading PFP to R2
+    const uploadPFPToR2 = async (file, userId) => {
+        if (!file) {
+            throw new Error('No file provided for upload.');
+        }
+
+        // PFP must be an image
+        if (!file.mimetype.startsWith('image/')) {
+            throw new Error('Unsupported file type. Please upload an image.');
+        }
+
+        const fileExtension = file.originalname.split('.').pop();
+        const objectKey = `images/${userId}-pfp.${fileExtension}`;
+
         const uploadParams = {
             Bucket: 'campus-quest-media',
             Key: objectKey,
@@ -184,14 +232,15 @@ exports.setApp = function(app, client)
                 lastName: lastName,
                 profile: {
                     displayName: `${firstName} ${lastName}`,
-                    PFP: null,
+                    PFP: 'images/pfp-default.png',
                     bio: "Make your bio here",
                 },
                 settings: {
                     notifications: true
                 },
                 createdAt: new Date(),
-                questPosts: []
+                questPosts: [],
+                friends: []
             };
 
             const result = await db.collection('users').insertOne(newUser);
@@ -308,10 +357,10 @@ exports.setApp = function(app, client)
 
     app.post('/api/submitPost', upload.single('file'), validateJWTMiddleware, async (req, res, next) =>
     {
-        // incoming: userId, questId, file, jwtToken
+        // incoming: userId, questId, caption, questDescription, file, jwtToken
         // outgoing: success, error
 
-        const { userId, questId, jwtToken } = req.body;
+        const { userId, questId, caption, questDescription, jwtToken } = req.body;
         const file = req.file;
 
         if (!userId) {
@@ -328,17 +377,42 @@ exports.setApp = function(app, client)
 
         try
         {
-            // Step 1: Upload file and get its path
-            const mediaPath = await uploadFileToR2(file, userId, questId);
-
             const db = getDatabase();
             
-            // Create the quest post object with a new ObjectId
+            // Step 1: Generate a unique ID for the post *before* uploading.
+            const questPostId = new ObjectId();
+
+            // Step 2: Determine file type and construct the permanent file path.
+            let folder = '';
+            if (file.mimetype.startsWith('image/')) {
+                folder = 'images';
+            } else if (file.mimetype.startsWith('video/')) {
+                folder = 'videos';
+            } else {
+                throw new Error('Unsupported file type. Please upload an image or video.');
+            }
+            
+            const fileExtension = file.originalname.split('.').pop();
+            const mediaPath = `${folder}/${userId}-${questPostId}.${fileExtension}`;
+            
+            // Step 3: Upload the file to R2 with its permanent name.
+            const uploadParams = {
+                Bucket: 'campus-quest-media',
+                Key: mediaPath,
+                Body: file.buffer,
+                ContentType: file.mimetype,
+            };
+            const command = new PutObjectCommand(uploadParams);
+            await r2Client.send(command);
+
+            // Step 4: Create the complete quest post object.
             const questPost = {
-                _id: new ObjectId(),
+                _id: questPostId,
                 questId: questId,
                 userId: userId,
-                mediaPath: mediaPath, // Use the path from upload
+                mediaPath: mediaPath,
+                caption: caption || '',
+                questDescription: questDescription || '',
                 likes: 0,
                 flagged: 0,
                 timeStamp: new Date(),
@@ -346,7 +420,7 @@ exports.setApp = function(app, client)
                 flaggedBy: []
             };
 
-            // Update the user document: add quest post to questPosts array and increment questCompleted
+            // Step 5: Update the user document.
             const result = await db.collection('users').updateOne(
                 { _id: new ObjectId(userId) },
                 {
@@ -525,6 +599,330 @@ exports.setApp = function(app, client)
         }
     });
 
+    app.post('/api/editPFP', upload.single('file'), validateJWTMiddleware, async (req, res, next) =>
+    {
+        // incoming: userId, file, jwtToken
+        // outgoing: success, pfpUrl, error
+
+        const { userId, jwtToken } = req.body;
+        const file = req.file;
+
+        if (!userId) {
+            return sendErrorResponse(res, 'User ID is required', jwtToken, 400);
+        }
+
+        if (!file) {
+            return sendErrorResponse(res, 'File is required for PFP', jwtToken, 400);
+        }
+
+        try
+        {
+            const db = getDatabase();
+
+            const user = await db.collection('users').findOne(
+                { _id: new ObjectId(userId) },
+                { projection: { 'profile.PFP': 1 } }
+            );
+
+            if (!user) {
+                return sendErrorResponse(res, 'User not found', jwtToken, 404);
+            }
+
+            // Step 1: Delete the old PFP if it's not the default one.
+            const oldPfpPath = user.profile && user.profile.PFP;
+            if (oldPfpPath && oldPfpPath !== 'images/pfp-default.png') {
+                try {
+                    const deleteParams = {
+                        Bucket: 'campus-quest-media',
+                        Key: oldPfpPath,
+                    };
+                    const command = new DeleteObjectCommand(deleteParams);
+                    await r2Client.send(command);
+                    console.log(`Successfully deleted old PFP: ${oldPfpPath}`);
+                } catch (deleteError) {
+                    // Log the error but continue, as the file might already be gone.
+                    console.error('Failed to delete old PFP from R2, proceeding with upload:', deleteError.toString());
+                }
+            }
+
+            // Step 2: Upload the new PFP after the old one has been handled.
+            const newPfpPath = await uploadPFPToR2(file, userId);
+
+            // Step 3: Update the database with the new PFP path.
+            const result = await db.collection('users').updateOne(
+                { _id: new ObjectId(userId) },
+                { $set: { 'profile.PFP': newPfpPath } }
+            );
+
+            if (result.matchedCount === 0) {
+                // This case should be rare, but it's good practice to handle it.
+                return sendErrorResponse(res, 'User not found during update', jwtToken, 404);
+            }
+
+            // Step 4: Return the signed URL for the new PFP.
+            const signedUrl = await getPresignedUrl(newPfpPath);
+
+            sendSuccessResponse(res, { success: true, pfpUrl: signedUrl }, jwtToken);
+        }
+        catch(e)
+        {
+            console.log('Edit PFP error:', e.toString());
+            sendErrorResponse(res, e.toString(), jwtToken, 500);
+        }
+    });
+
+    app.post('/api/getProfile', validateJWTMiddleware, async (req, res, next) =>
+    {
+        // incoming: userId, jwtToken
+        // outgoing: profileData, error
+
+        const { userId, jwtToken } = req.body;
+
+        if (!userId) {
+            return sendErrorResponse(res, 'User ID is required', jwtToken, 400);
+        }
+
+        try
+        {
+            const db = getDatabase();
+
+            const user = await db.collection('users').findOne(
+                { _id: new ObjectId(userId) },
+                { 
+                    projection: { 
+                        questCompleted: 1, 
+                        'profile.displayName': 1, 
+                        'profile.PFP': 1, 
+                        questPosts: 1,
+                        _id: 0
+                    } 
+                }
+            );
+
+            if (!user) {
+                return sendErrorResponse(res, 'User not found', jwtToken, 404);
+            }
+
+            const pfpUrl = await getPresignedUrl(user.profile?.PFP);
+
+            const postsWithUrls = user.questPosts ? await Promise.all(user.questPosts.map(async (post) => {
+                const mediaUrl = await getPresignedUrl(post.mediaPath);
+                const { mediaPath, ...rest } = post;
+                return { ...rest, mediaUrl };
+            })) : [];
+
+            const profileData = {
+                questCompleted: user.questCompleted,
+                displayName: user.profile?.displayName,
+                pfp: pfpUrl,
+                questPosts: postsWithUrls.sort((a, b) => new Date(b.timeStamp) - new Date(a.timeStamp))
+            };
+
+            sendSuccessResponse(res, { profileData }, jwtToken);
+        }
+        catch(e)
+        {
+            console.log('Get profile error:', e.toString());
+            sendErrorResponse(res, e.toString(), jwtToken, 500);
+        }
+    });
+
+    app.post('/api/addFriend', validateJWTMiddleware, async (req, res, next) =>
+    {
+        // incoming: userId, friendId, jwtToken
+        // outgoing: friends, error
+
+        const { userId, friendId, jwtToken } = req.body;
+
+        if (!userId || !friendId) {
+            return sendErrorResponse(res, 'User ID and Friend ID are required', jwtToken, 400);
+        }
+
+       /* if (userId === friendId) {
+            return sendErrorResponse(res, 'Cannot add yourself as a friend', jwtToken, 400);
+        }*/
+
+        try
+        {
+            const db = getDatabase();
+            const userObjectId = new ObjectId(userId);
+            const friendObjectId = new ObjectId(friendId);
+
+            // Check if both users exist to prevent adding non-existent users
+            const friendExists = await db.collection('users').countDocuments({ _id: friendObjectId });
+            if (friendExists === 0) {
+                return sendErrorResponse(res, 'The user you are trying to add does not exist', jwtToken, 404);
+            }
+
+            // Add friendId to the user's friends list, preventing duplicates
+            const result = await db.collection('users').updateOne(
+                { _id: userObjectId },
+                { $addToSet: { friends: friendObjectId } }
+            );
+
+            // Fetch the updated user to return their new friends list
+            const updatedUser = await db.collection('users').findOne(
+                { _id: userObjectId },
+                { projection: { friends: 1, _id: 0 } }
+            );
+
+            sendSuccessResponse(res, { friends: updatedUser.friends || [] }, jwtToken);
+        }
+        catch(e)
+        {
+            console.log('Add friend error:', e.toString());
+            sendErrorResponse(res, e.toString(), jwtToken, 500);
+        }
+    });
+
+    app.post('/api/removeFriend', validateJWTMiddleware, async (req, res, next) =>
+    {
+        // incoming: userId, friendId, jwtToken
+        // outgoing: friends, error
+
+        const { userId, friendId, jwtToken } = req.body;
+
+        if (!userId || !friendId) {
+            return sendErrorResponse(res, 'User ID and Friend ID are required', jwtToken, 400);
+        }
+
+        try
+        {
+            const db = getDatabase();
+            const userObjectId = new ObjectId(userId);
+            const friendObjectId = new ObjectId(friendId);
+
+            // Use $pull to remove the friendId from the user's friends array
+            const result = await db.collection('users').updateOne(
+                { _id: userObjectId },
+                { $pull: { friends: friendObjectId } }
+            );
+
+            if (result.matchedCount === 0) {
+                return sendErrorResponse(res, 'User not found', jwtToken, 404);
+            }
+
+            // Fetch the updated user to return their new friends list
+            const updatedUser = await db.collection('users').findOne(
+                { _id: userObjectId },
+                { projection: { friends: 1, _id: 0 } }
+            );
+
+            sendSuccessResponse(res, { friends: updatedUser.friends || [] }, jwtToken);
+        }
+        catch(e)
+        {
+            console.log('Remove friend error:', e.toString());
+            sendErrorResponse(res, e.toString(), jwtToken, 500);
+        }
+    });
+
+    app.post('/api/fetchFriends', validateJWTMiddleware, async (req, res, next) =>
+    {
+        // incoming: userId, jwtToken
+        // outgoing: friends (populated and sorted), error
+
+        const { userId, jwtToken } = req.body;
+
+        if (!userId) {
+            return sendErrorResponse(res, 'User ID is required', jwtToken, 400);
+        }
+
+        try
+        {
+            const db = getDatabase();
+            const userObjectId = new ObjectId(userId);
+
+            const user = await db.collection('users').findOne(
+                { _id: userObjectId },
+                { projection: { friends: 1, _id: 0 } }
+            );
+
+            if (!user) {
+                return sendErrorResponse(res, 'User not found', jwtToken, 404);
+            }
+
+            if (!user.friends || user.friends.length === 0) {
+                return sendSuccessResponse(res, { friends: [] }, jwtToken);
+            }
+
+            const friends = await db.collection('users').find(
+                { _id: { $in: user.friends } }
+            ).project({
+                'profile.displayName': 1,
+                'profile.PFP': 1,
+                'questCompleted': 1
+            }).toArray();
+
+            const friendsWithUrls = await Promise.all(friends.map(async (friend) => {
+                const pfpUrl = await getPresignedUrl(friend.profile?.PFP);
+                return {
+                    _id: friend._id,
+                    displayName: friend.profile?.displayName,
+                    pfp: pfpUrl,
+                    questCompleted: friend.questCompleted
+                };
+            }));
+            
+            friendsWithUrls.sort((a, b) => {
+                if (b.questCompleted !== a.questCompleted) {
+                    return b.questCompleted - a.questCompleted;
+                }
+                return a.displayName.localeCompare(b.displayName);
+            });
+
+            sendSuccessResponse(res, { friends: friendsWithUrls }, jwtToken);
+        }
+        catch(e)
+        {
+            console.log('Fetch friends error:', e.toString());
+            sendErrorResponse(res, e.toString(), jwtToken, 500);
+        }
+    });
+
+    app.post('/api/fetchScoreboard', validateJWTMiddleware, async (req, res, next) =>
+    {
+        // incoming: jwtToken
+        // outgoing: scoreboard, error
+
+        const { jwtToken } = req.body;
+
+        try
+        {
+            const db = getDatabase();
+
+            const users = await db.collection('users').find({ emailVerified: true }).project({
+                'profile.displayName': 1,
+                'profile.PFP': 1,
+                'questCompleted': 1
+            }).toArray();
+
+            const scoreboardData = await Promise.all(users.map(async (user) => {
+                const pfpUrl = await getPresignedUrl(user.profile?.PFP);
+                return {
+                    userId: user._id,
+                    displayName: user.profile?.displayName,
+                    pfp: pfpUrl,
+                    questCompleted: user.questCompleted || 0
+                };
+            }));
+            
+            scoreboardData.sort((a, b) => {
+                if (b.questCompleted !== a.questCompleted) {
+                    return b.questCompleted - a.questCompleted;
+                }
+                return (a.displayName || '').localeCompare(b.displayName || '');
+            });
+
+            sendSuccessResponse(res, { scoreboard: scoreboardData }, jwtToken);
+        }
+        catch(e)
+        {
+            console.log('Fetch scoreboard error:', e.toString());
+            sendErrorResponse(res, e.toString(), jwtToken, 500);
+        }
+    });
+
     app.post('/api/toggleNotifications', validateJWTMiddleware, async (req, res, next) =>
     {
         // incoming: userId, jwtToken
@@ -672,6 +1070,7 @@ exports.setApp = function(app, client)
             sendResponse(res, {
                 success: true,
                 currentQuest: currentQuest,
+                questDescription: currentQuest.questData?.questDescription,
                 timestamp: new Date()
             });
             

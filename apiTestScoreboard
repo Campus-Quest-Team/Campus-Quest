@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# A script to test the /api/fetchFriends and /api/fetchScoreboard endpoints.
+# It logs in, fetches the user's friends list, then fetches the global scoreboard.
+
+# --- Configuration ---
+API_BASE_URL="http://localhost:5001/api"
+FETCH_FRIENDS_URL="$API_BASE_URL/fetchFriends"
+FETCH_SCOREBOARD_URL="$API_BASE_URL/fetchScoreboard"
+LOGIN_SCRIPT="./apiTestLogin.sh"
+
+# --- Step 1: Login to get credentials ---
+echo "Attempting to log in..."
+
+if [ ! -f "$LOGIN_SCRIPT" ]; then
+    echo "Error: Login script not found at '$LOGIN_SCRIPT'"
+    exit 1
+fi
+
+source "$LOGIN_SCRIPT"
+
+if [ -z "$JWT_TOKEN" ] || [ -z "$USER_ID" ]; then
+    echo "Failed to obtain JWT token or User ID from login script."
+    exit 1
+fi
+
+echo "Login successful. User ID: $USER_ID"
+echo "-----------------------------------"
+echo ""
+
+# --- Step 2: Call fetchFriends endpoint ---
+echo "Fetching friends for user $USER_ID..."
+fetch_friends_response=$(curl -s -X POST \
+  -H "Content-Type: application/json" \
+  -d "{\"userId\":\"$USER_ID\", \"jwtToken\":\"$JWT_TOKEN\"}" \
+  $FETCH_FRIENDS_URL)
+
+echo "fetchFriends response:"
+echo "$fetch_friends_response" | jq '.'
+echo "-----------------------------------"
+echo ""
+
+
+# --- Step 3: Call fetchScoreboard endpoint ---
+echo "Fetching global scoreboard..."
+fetch_scoreboard_response=$(curl -s -X POST \
+  -H "Content-Type: application/json" \
+  -d "{\"jwtToken\":\"$JWT_TOKEN\"}" \
+  $FETCH_SCOREBOARD_URL)
+
+echo "fetchScoreboard response:"
+echo "$fetch_scoreboard_response" | jq '.'
+
+
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to parse fetchScoreboard response with jq."
+    echo "Raw response: $fetch_scoreboard_response"
+    exit 1
+fi
+
+
+echo ""
+echo "Script finished." 
