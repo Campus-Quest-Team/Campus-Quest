@@ -1,14 +1,17 @@
 #!/bin/bash
 
-# A script to test the /api/getProfile and /api/editPFP endpoints.
-# It first logs in, gets the profile for the logged-in user, then updates their profile picture.
+# A script to test the profile update workflow.
+# It logs in, gets the profile, updates the PFP, and updates the display name/bio.
 
 # --- Configuration ---
 API_BASE_URL="http://localhost:5001/api"
 PROFILE_URL="$API_BASE_URL/getProfile"
 EDIT_PFP_URL="$API_BASE_URL/editPFP"
+EDIT_PROFILE_URL="$API_BASE_URL/editProfile"
 LOGIN_SCRIPT="./apiTestLogin.sh"
-PFP_FILE_PATH="frontend/public/image.png" # The test image to upload
+PFP_FILE_PATH="frontend/public/image.png"
+NEW_DISPLAY_NAME="New Name"
+NEW_BIO="New Bio"
 
 # --- Step 1: Login to get JWT by sourcing the login script ---
 echo "Attempting to log in to get a session token..."
@@ -35,7 +38,7 @@ echo "-----------------------------------"
 echo ""
 
 # --- Step 2: Call getProfile ---
-echo "Fetching profile for user ID: $TARGET_USER_ID..."
+echo "Fetching initial profile for user ID: $TARGET_USER_ID..."
 profile_response=$(curl -s -X POST \
   -H "Content-Type: application/json" \
   -d "{\"userId\":\"$TARGET_USER_ID\", \"jwtToken\":\"$JWT_TOKEN\"}" \
@@ -44,7 +47,6 @@ profile_response=$(curl -s -X POST \
 profile_error=$(echo "$profile_response" | jq -r '.error')
 if [ "$profile_error" != "null" ] && [ ! -z "$profile_error" ]; then
     echo "Failed to get profile: $profile_error"
-    # We don't exit here, so we can still attempt the PFP edit
 fi
 
 echo "Initial profile data received:"
@@ -63,7 +65,6 @@ if [ ! -f "$PFP_FILE_PATH" ]; then
     exit 1
 fi
 
-# Use -F for multipart/form-data when uploading files
 edit_pfp_response=$(curl -s -X POST \
   -F "file=@$PFP_FILE_PATH" \
   -F "userId=$TARGET_USER_ID" \
@@ -80,9 +81,23 @@ fi
 echo "editPFP response:"
 echo "$edit_pfp_response" | jq '.'
 
+
+# --- Step 4: Call editProfile ---
+echo ""
+echo "-----------------------------------"
+echo "Attempting to update display name and bio..."
+
+edit_profile_response=$(curl -s -X POST \
+  -H "Content-Type: application/json" \
+  -d "{\"userId\":\"$TARGET_USER_ID\", \"displayName\":\"$NEW_DISPLAY_NAME\", \"bio\":\"$NEW_BIO\", \"jwtToken\":\"$JWT_TOKEN\"}" \
+  $EDIT_PROFILE_URL)
+
+echo "editProfile response:"
+echo "$edit_profile_response" | jq '.'
+
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to parse editPFP response with jq."
-    echo "Raw response: $edit_pfp_response"
+    echo "Error: Failed to parse editProfile response with jq."
+    echo "Raw response: $edit_profile_response"
     exit 1
 fi
 

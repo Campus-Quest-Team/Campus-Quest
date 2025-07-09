@@ -1,9 +1,12 @@
 #!/bin/bash
 
+# A reusable login script for the new modular API structure
+# Exports USER_ID and JWT_TOKEN for use by other scripts
+
 # --- Configuration ---
 # You might need to change these values.
-LOGIN="demo"
-PASSWORD="demo"
+LOGIN="test"
+PASSWORD="test"
 
 # The URL where your API is running.
 API_URL="http://localhost:5001/api/login"

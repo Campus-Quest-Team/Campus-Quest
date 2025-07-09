@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# A script to test the /api/register endpoint.
+# Manually configure the user details below before running.
+
+# --- Configuration ---
+# !! IMPORTANT !!
+# Change these values to test different registrations.
+LOGIN="test"
+PASSWORD="test"
+FIRST_NAME="User"
+LAST_NAME="1"
+EMAIL="test@gmail.com"
+
+# The URL where your API is running.
+API_URL="http://localhost:5001/api/register"
+
+# --- API Call ---
+echo "Attempting to register user '$LOGIN'..."
+echo "API endpoint: $API_URL"
+
+response=$(curl -s -X POST \
+  -H "Content-Type: application/json" \
+  -d "{
+        \"login\":\"$LOGIN\",
+        \"password\":\"$PASSWORD\",
+        \"firstName\":\"$FIRST_NAME\",
+        \"lastName\":\"$LAST_NAME\",
+        \"email\":\"$EMAIL\"
+      }" \
+  $API_URL)
+
+
+# --- Output ---
+echo ""
+echo "Registration response:"
+echo "$response" | jq '.'
+
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to parse registration response with jq."
+    echo "Raw response: $response"
+    exit 1
+fi
+
+echo ""
+echo "Script finished." 

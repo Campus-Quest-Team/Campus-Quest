@@ -27,7 +27,7 @@ const r2Client = new S3Client({
 exports.setApp = function(app, client)
 {
     var token = require('./createJWT.js');
-
+    
     // Helper functions to reduce redundancy
     const validateJWT = (jwtToken) => {
         try {
@@ -178,7 +178,7 @@ exports.setApp = function(app, client)
             if(results.length > 0)
             {
                 const user = results[0];
-
+                
                 // Check if email is verified
                 if(!user.emailVerified)
                 {
@@ -251,7 +251,6 @@ exports.setApp = function(app, client)
             sendResponse(res, { userId: null, firstName: '', lastName: '', error: e.toString() });
         }
     });
-
 
     // Add the new upload-media endpoint
     app.post('/api/uploadMedia', upload.single('file'), validateJWTMiddleware, async (req, res, next) =>
@@ -332,10 +331,10 @@ exports.setApp = function(app, client)
 
         try {
             const db = getDatabase();
-
+            
             const mediaRecord = await db.collection('media').findOne(
                 { userId: userId, questId: questId },
-                { sort: { uploadTimestamp: -1 } }
+                { sort: { uploadTimestamp: -1 } } 
             );
 
             if (!mediaRecord) {
@@ -348,7 +347,7 @@ exports.setApp = function(app, client)
             });
 
             const signedUrl = await getSignedUrl(r2Client, command, { expiresIn: 900 });
-
+            
             sendSuccessResponse(res, { signedUrl: signedUrl, error: '' }, jwtToken);
         } catch (e) {
             console.error('Error getting signed URL:', e);
@@ -371,7 +370,7 @@ exports.setApp = function(app, client)
         if (!questId) {
             return sendErrorResponse(res, 'Quest ID is required', jwtToken, 400);
         }
-
+        
         if (!file) {
             return sendErrorResponse(res, 'File is required for submission', jwtToken, 400);
         }
@@ -446,7 +445,7 @@ exports.setApp = function(app, client)
     app.post('/api/likePost', validateJWTMiddleware, async (req, res, next) =>
     {
         // incoming: userId, questPostId, jwtToken
-        // outgoing: success, liked, error
+        // outgoing: success, liked (new like count), error
 
         const { userId, questPostId, jwtToken } = req.body;
 
@@ -461,7 +460,7 @@ exports.setApp = function(app, client)
         try
         {
             const db = getDatabase();
-
+            
             // Find the user document that contains the quest post
             const user = await db.collection('users').findOne({
                 'questPosts._id': new ObjectId(questPostId)
@@ -473,7 +472,7 @@ exports.setApp = function(app, client)
 
             // Find the specific quest post
             const questPost = user.questPosts.find(post => post._id.toString() === questPostId);
-
+            
             if (!questPost) {
                 return sendErrorResponse(res, 'Quest post not found', jwtToken, 404);
             }
@@ -502,7 +501,7 @@ exports.setApp = function(app, client)
 
             // Update the quest post
             const result = await db.collection('users').updateOne(
-                {
+                { 
                     _id: user._id,
                     'questPosts._id': new ObjectId(questPostId)
                 },
@@ -540,7 +539,7 @@ exports.setApp = function(app, client)
         try
         {
             const db = getDatabase();
-
+            
             // Find the user document that contains the quest post
             const user = await db.collection('users').findOne({
                 'questPosts._id': new ObjectId(questPostId)
@@ -552,7 +551,7 @@ exports.setApp = function(app, client)
 
             // Find the specific quest post
             const questPost = user.questPosts.find(post => post._id.toString() === questPostId);
-
+            
             if (!questPost) {
                 return sendErrorResponse(res, 'Quest post not found', jwtToken, 404);
             }
@@ -570,7 +569,7 @@ exports.setApp = function(app, client)
             } else {
                 // Add user to flaggedBy array
                 const result = await db.collection('users').updateOne(
-                    {
+                    { 
                         _id: user._id,
                         'questPosts._id': new ObjectId(questPostId)
                     },
@@ -585,7 +584,7 @@ exports.setApp = function(app, client)
                 }
 
                 flagged = true;
-
+                
                 // Check if we need to set needsReview (3 or more flags)
                 const newFlagCount = (questPost.flaggedBy ? questPost.flaggedBy.length : 0) + 1;
                 needsReview = newFlagCount >= 3;
@@ -938,7 +937,7 @@ exports.setApp = function(app, client)
         try
         {
             const db = getDatabase();
-
+            
             // Find the user and get current notifications setting
             const user = await db.collection('users').findOne({
                 _id: new ObjectId(userId)
@@ -949,8 +948,8 @@ exports.setApp = function(app, client)
             }
 
             // Get current notifications setting (default to true if not set)
-            const currentNotifications = user.settings && user.settings.notifications !== undefined
-                ? user.settings.notifications
+            const currentNotifications = user.settings && user.settings.notifications !== undefined 
+                ? user.settings.notifications 
                 : true;
 
             // Toggle to the inverse
@@ -985,65 +984,65 @@ exports.setApp = function(app, client)
         try
         {
             const db = getDatabase();
-
+            
             // Step 1: Find all quests where isCycled is false
             let availableQuests = await db.collection('quests').find({ isCycled: false }).toArray();
-
+            
             // Step 2: If no quests available, reset all quests to false
             if (availableQuests.length === 0) {
                 await db.collection('quests').updateMany(
                     {},
                     { $set: { isCycled: false } }
                 );
-
+                
                 // Fetch quests again after reset
                 availableQuests = await db.collection('quests').find({ isCycled: false }).toArray();
-
+                
                 console.log(`Reset all quests. Found ${availableQuests.length} quests available.`);
             }
-
+            
             // Step 3: Pick a random quest from available ones
             if (availableQuests.length === 0) {
-                return sendResponse(res, {
-                    success: false,
+                return sendResponse(res, { 
+                    success: false, 
                     error: 'No quests available in the database',
                     timestamp: new Date()
                 });
             }
-
+            
             const randomIndex = Math.floor(Math.random() * availableQuests.length);
             const selectedQuest = availableQuests[randomIndex];
-
+            
             // Step 4: Insert into currentquest table
             const currentQuestDoc = {
                 questId: selectedQuest._id,
                 timestamp: new Date(),
                 questData: selectedQuest // Store the full quest data for reference
             };
-
+            
             await db.collection('currentquest').insertOne(currentQuestDoc);
-
+            
             // Step 5: Mark the selected quest as cycled
             await db.collection('quests').updateOne(
                 { _id: selectedQuest._id },
                 { $set: { isCycled: true } }
             );
-
+            
             console.log(`Rotated quest: ${selectedQuest._id} at ${currentQuestDoc.timestamp}`);
-
+            
             sendResponse(res, {
                 success: true,
                 selectedQuestId: selectedQuest._id,
                 timestamp: currentQuestDoc.timestamp,
                 availableQuestsRemaining: availableQuests.length - 1
             });
-
+            
         }
         catch(e)
         {
             console.error('Quest rotation error:', e);
-            sendResponse(res, {
-                success: false,
+            sendResponse(res, { 
+                success: false, 
                 error: e.toString(),
                 timestamp: new Date()
             }, 500);
@@ -1056,37 +1055,37 @@ exports.setApp = function(app, client)
         try
         {
             const db = getDatabase();
-
+            
             const currentQuest = await db.collection('currentquest')
                 .findOne({}, { sort: { timestamp: -1 } });
-
+            
             if (!currentQuest) {
-                return sendResponse(res, {
-                    success: false,
+                return sendResponse(res, { 
+                    success: false, 
                     error: 'No current quest found',
                     timestamp: new Date()
                 });
             }
-
+            
             sendResponse(res, {
                 success: true,
                 currentQuest: currentQuest,
-                questDescription: currentQuest.questData?.questDescription,
+                questDescription: currentQuest.questData?.description,
                 timestamp: new Date()
             });
-
+            
         }
         catch(e)
         {
             console.error('Get current quest error:', e);
-            sendResponse(res, {
-                success: false,
+            sendResponse(res, { 
+                success: false, 
                 error: e.toString(),
                 timestamp: new Date()
             }, 500);
         }
     });
-
+    
     app.post('/api/emailSend', async (req, res, next) => {
         //incoming: login, email, userId, jwtToken
         //outgoing: data { id }, error, jwtToken { accessToken }
@@ -1130,7 +1129,7 @@ exports.setApp = function(app, client)
             console.log(error);
         }
     });
-
+    
     app.post('/api/emailVerification', validateJWTMiddleware, async (req, res, next) => {
         // incoming: userId, jwtToken
         // outgoing: error, jwtToken
