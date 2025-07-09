@@ -26,7 +26,8 @@ const r2Client = new S3Client({
 
 exports.setApp = function(app, client)
 {
-     var token = require('./createJWT.js');    
+    var token = require('./createJWT.js');
+    
     // Helper functions to reduce redundancy
     const validateJWT = (jwtToken) => {
         try {
@@ -65,6 +66,41 @@ exports.setApp = function(app, client)
 
     const getDatabase = () => client.db('campusQuest');
 
+    // Helper function for uploading files to R2
+    const uploadFileToR2 = async (file, userId, questId) => {
+        if (!file) {
+            throw new Error('No file provided for upload.');
+        }
+
+        // Determine destination folder and reject unsupported file types
+        let folder = '';
+        if (file.mimetype.startsWith('image/')) {
+            folder = 'image';
+        } else if (file.mimetype.startsWith('video/')) {
+            folder = 'video';
+        } else {
+            throw new Error('Unsupported file type. Please upload an image or video.');
+        }
+
+        // Generate filename without timestamp.
+        const fileExtension = file.originalname.split('.').pop();
+        const baseFileName = `questId-${questId}-userId-${userId}.${fileExtension}`;
+        const objectKey = `${folder}/${baseFileName}`;
+
+        // Upload to R2
+        const uploadParams = {
+            Bucket: 'campus-quest-media',
+            Key: objectKey,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+        };
+
+        const command = new PutObjectCommand(uploadParams);
+        await r2Client.send(command);
+
+        return objectKey;
+    };
+
     // Middleware for JWT validation
     const validateJWTMiddleware = (req, res, next) => {
         const { jwtToken } = req.body;
@@ -80,28 +116,6 @@ exports.setApp = function(app, client)
         next();
     };
 
-    app.post('/api/addcard', validateJWTMiddleware, async (req, res, next) =>
-    {
-        // incoming: Card, UserId
-        // outgoing: error
-        
-        const { userId, card, jwtToken } = req.body;
-        const newCard = {Card: card, UserId: userId};
-        var error = '';
-
-        try
-        {
-            const db = getDatabase();
-            await db.collection('Cards').insertOne(newCard);
-        }
-        catch(e)
-        {
-            error = e.toString();
-        }
-
-        sendSuccessResponse(res, { error: error }, jwtToken);
-    });
-
     app.post('/api/login', async (req, res, next) =>
     {
         // incoming: login, password
@@ -115,9 +129,17 @@ exports.setApp = function(app, client)
 
             if(results.length > 0)
             {
-                const userId = results[0]._id;
-                const fn = results[0].firstName;
-                const ln = results[0].lastName;
+                const user = results[0];
+                
+                // Check if email is verified
+                if(!user.emailVerified)
+                {
+                    return sendResponse(res, {error: "Email not yet verified"});
+                }
+
+                const userId = user._id;
+                const fn = user.firstName;
+                const ln = user.lastName;
 
                 const ret = token.createToken(fn, ln, userId);
                 ret.userId = userId;
@@ -129,25 +151,6 @@ exports.setApp = function(app, client)
             }
         } catch(e) {
             sendErrorResponse(res, e.message);
-        }
-    });
-
-    app.post('/api/searchcards', validateJWTMiddleware, async (req, res, next) =>
-    {
-        // incoming: userId, search, jwtToken
-        // outgoing: results[], error
-
-        const { userId, search, jwtToken } = req.body;
-        const _search = search.trim();
-
-        try {
-            const db = getDatabase();
-            const results = await db.collection('Cards').find({"Card":{$regex:_search+'.*',$options:'i'}}).toArray();
-
-            const _ret = results.map(result => result.Card);
-            sendSuccessResponse(res, { results: _ret, error: '' }, jwtToken);
-        } catch(e) {
-            sendErrorResponse(res, e.toString(), jwtToken);
         }
     });
 
@@ -181,7 +184,8 @@ exports.setApp = function(app, client)
                 lastName: lastName,
                 profile: {
                     displayName: `${firstName} ${lastName}`,
-                    PFP: null
+                    PFP: null,
+                    bio: "Make your bio here",
                 },
                 settings: {
                     notifications: true
@@ -191,23 +195,39 @@ exports.setApp = function(app, client)
             };
 
             const result = await db.collection('users').insertOne(newUser);
+            const userId = result.insertedId;
 
-            const ret = token.createToken(firstName, lastName, result.insertedId);
-
-            sendResponse(res, ret);
+            sendResponse(res, { userId: userId, firstName: firstName, lastName: lastName, error: '' });
         } catch(e) {
             sendResponse(res, { userId: null, firstName: '', lastName: '', error: e.toString() });
         }
     });
 
     // Add the new upload-media endpoint
-    app.post('/api/upload-media', validateJWTMiddleware, upload.single('file'), async (req, res, next) =>
+    app.post('/api/uploadMedia', upload.single('file'), validateJWTMiddleware, async (req, res, next) =>
     {
         // incoming: file, userId, questid, jwtToken
         // outgoing: fileUrl, error
 
         const { jwtToken, userId, questId } = req.body;
         const file = req.file;
+        var error = '';
+
+        // Validate JWT token
+        try
+        {
+            if(token.isExpired(jwtToken))
+            {
+                var r = {error:'The JWT is no longer valid', jwtToken:''};
+                res.status(200).json(r);
+                return;
+            }
+        }
+        catch(e)
+        {
+            console.log(e.message);
+            error = 'Invalid token';
+        }
 
         if (!userId) {
             return sendErrorResponse(res, 'User ID is required', jwtToken, 400);
@@ -222,35 +242,9 @@ exports.setApp = function(app, client)
             return sendErrorResponse(res, 'No file provided', jwtToken, 400);
         }
 
-        // Determine destination folder and reject unsupported file types
-        let folder = '';
-        if (file.mimetype.startsWith('image/')) {
-            folder = 'image';
-        } else if (file.mimetype.startsWith('video/')) {
-            folder = 'video';
-        } else {
-            return sendErrorResponse(res, 'Unsupported file type. Please upload an image or video.', jwtToken, 400);
-        }
-
-        // Generate filename without timestamp. WARNING: This will overwrite previous uploads for the same quest/user.
-        const fileExtension = file.originalname.split('.').pop();
-        const baseFileName = `questId-${questId}-userId-${userId}.${fileExtension}`;
-        const objectKey = `${folder}/${baseFileName}`;
-
         try
         {
-            // Upload to R2
-            const uploadParams = {
-                Bucket: 'campus-quest-media',
-                Key: objectKey,
-                Body: file.buffer,
-                ContentType: file.mimetype,
-            };
-
-            const command = new PutObjectCommand(uploadParams);
-            await r2Client.send(command);
-
-            // Generate file URL for the API response
+            const objectKey = await uploadFileToR2(req.file, userId, questId);
             const fileUrl = `${process.env.R2_PUBLIC_URL}/${objectKey}`;
 
             // Update or insert media info in MongoDB. This prevents duplicate records for the same file path.
@@ -275,7 +269,7 @@ exports.setApp = function(app, client)
         }
     });
 
-    app.post('/api/get-media', validateJWTMiddleware, async (req, res, next) =>
+    app.post('/api/getMedia', validateJWTMiddleware, async (req, res, next) =>
     {
         // incoming: userId, questId, jwtToken
         // outgoing: signedUrl, error
@@ -312,12 +306,13 @@ exports.setApp = function(app, client)
         }
     });
 
-    app.post('/api/submitQuest', validateJWTMiddleware, async (req, res, next) =>
+    app.post('/api/submitPost', upload.single('file'), validateJWTMiddleware, async (req, res, next) =>
     {
-        // incoming: userId, questId, mediaPath, jwtToken
+        // incoming: userId, questId, file, jwtToken
         // outgoing: success, error
 
-        const { userId, questId, mediaPath, jwtToken } = req.body;
+        const { userId, questId, jwtToken } = req.body;
+        const file = req.file;
 
         if (!userId) {
             return sendErrorResponse(res, 'User ID is required', jwtToken, 400);
@@ -326,20 +321,24 @@ exports.setApp = function(app, client)
         if (!questId) {
             return sendErrorResponse(res, 'Quest ID is required', jwtToken, 400);
         }
-
-        if (!mediaPath) {
-            return sendErrorResponse(res, 'Media path is required', jwtToken, 400);
+        
+        if (!file) {
+            return sendErrorResponse(res, 'File is required for submission', jwtToken, 400);
         }
 
         try
         {
+            // Step 1: Upload file and get its path
+            const mediaPath = await uploadFileToR2(file, userId, questId);
+
             const db = getDatabase();
             
-            // Create the quest post object
+            // Create the quest post object with a new ObjectId
             const questPost = {
+                _id: new ObjectId(),
                 questId: questId,
                 userId: userId,
-                mediaPath: mediaPath,
+                mediaPath: mediaPath, // Use the path from upload
                 likes: 0,
                 flagged: 0,
                 timeStamp: new Date(),
@@ -364,7 +363,7 @@ exports.setApp = function(app, client)
         }
         catch(e)
         {
-            console.log('Submit quest error:', e.toString());
+            console.log('Submit post error:', e.toString());
             sendErrorResponse(res, e.toString(), jwtToken, 500);
         }
     });
@@ -578,8 +577,117 @@ exports.setApp = function(app, client)
             sendErrorResponse(res, e.toString(), jwtToken, 500);
         }
     });
+
+    app.post('/api/rotateQuest', async (req, res, next) =>
+    {
+        // This endpoint handles the quest rotation logic
+        // Can be called manually or by a cron job
+
+        try
+        {
+            const db = getDatabase();
+            
+            // Step 1: Find all quests where isCycled is false
+            let availableQuests = await db.collection('quests').find({ isCycled: false }).toArray();
+            
+            // Step 2: If no quests available, reset all quests to false
+            if (availableQuests.length === 0) {
+                await db.collection('quests').updateMany(
+                    {},
+                    { $set: { isCycled: false } }
+                );
+                
+                // Fetch quests again after reset
+                availableQuests = await db.collection('quests').find({ isCycled: false }).toArray();
+                
+                console.log(`Reset all quests. Found ${availableQuests.length} quests available.`);
+            }
+            
+            // Step 3: Pick a random quest from available ones
+            if (availableQuests.length === 0) {
+                return sendResponse(res, { 
+                    success: false, 
+                    error: 'No quests available in the database',
+                    timestamp: new Date()
+                });
+            }
+            
+            const randomIndex = Math.floor(Math.random() * availableQuests.length);
+            const selectedQuest = availableQuests[randomIndex];
+            
+            // Step 4: Insert into currentquest table
+            const currentQuestDoc = {
+                questId: selectedQuest._id,
+                timestamp: new Date(),
+                questData: selectedQuest // Store the full quest data for reference
+            };
+            
+            await db.collection('currentquest').insertOne(currentQuestDoc);
+            
+            // Step 5: Mark the selected quest as cycled
+            await db.collection('quests').updateOne(
+                { _id: selectedQuest._id },
+                { $set: { isCycled: true } }
+            );
+            
+            console.log(`Rotated quest: ${selectedQuest._id} at ${currentQuestDoc.timestamp}`);
+            
+            sendResponse(res, {
+                success: true,
+                selectedQuestId: selectedQuest._id,
+                timestamp: currentQuestDoc.timestamp,
+                availableQuestsRemaining: availableQuests.length - 1
+            });
+            
+        }
+        catch(e)
+        {
+            console.error('Quest rotation error:', e);
+            sendResponse(res, { 
+                success: false, 
+                error: e.toString(),
+                timestamp: new Date()
+            }, 500);
+        }
+    });
+
+    app.get('/api/currentQuest', async (req, res, next) =>
+    {
+        // Get the current active quest
+        try
+        {
+            const db = getDatabase();
+            
+            const currentQuest = await db.collection('currentquest')
+                .findOne({}, { sort: { timestamp: -1 } });
+            
+            if (!currentQuest) {
+                return sendResponse(res, { 
+                    success: false, 
+                    error: 'No current quest found',
+                    timestamp: new Date()
+                });
+            }
+            
+            sendResponse(res, {
+                success: true,
+                currentQuest: currentQuest,
+                timestamp: new Date()
+            });
+            
+        }
+        catch(e)
+        {
+            console.error('Get current quest error:', e);
+            sendResponse(res, { 
+                success: false, 
+                error: e.toString(),
+                timestamp: new Date()
+            }, 500);
+        }
+    });
     
-    app.post('/api/email-send', async (req, res, next) => {
+    app.post('/api/emailSend', async (req, res, next) => {
         //incoming: login, email, userId, jwtToken
         //outgoing: data { id }, error, jwtToken { accessToken }
         //the data field is email information provided by Resend API
@@ -623,7 +731,7 @@ exports.setApp = function(app, client)
         }
     });
     
-    app.post('/api/email-verification', validateJWTMiddleware, async (req, res, next) => {
+    app.post('/api/emailVerification', validateJWTMiddleware, async (req, res, next) => {
         // incoming: userId, jwtToken
         // outgoing: error, jwtToken
         // the middleware automatically checks expiry, code below just ensures the emailVerified value is updated
