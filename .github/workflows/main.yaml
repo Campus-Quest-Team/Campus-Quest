@@ -37,11 +37,11 @@ jobs:
           sed '8 s/nodemon/node/' package.json
           echo "${{ secrets.MONGODB_CONNECTION }}" > '.env'
           echo "${{ secrets.JWT_ACCESS }}" >> '.env'
-          echo "${{ secrets.GMAIL_RESEND_KEY }}" >> '.env'
           echo "${{ secrets.R2_ACCESS }}" >> '.env'
           echo "${{ secrets.R2_ENDPOINT }}" >> '.env'
           echo "${{ secrets.R2_PUB_URL }}" >> '.env'
           echo "${{ secrets.R2_SECRET_ACCESS }}" >> '.env'
+          echo "${{ secrets.RESEND_API_KEY }}" >> '.env'
           cd ./frontend
           sudo npm install
           sudo npm run build

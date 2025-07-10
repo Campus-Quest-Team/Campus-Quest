@@ -12,8 +12,10 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-var api = require('./api.js');
-api.setApp(app, client);
+// Use the new modular API structure
+const initializeAPI = require('./api');
+const apiRouter = initializeAPI(client);
+app.use('/api', apiRouter);
 
 app.use((req, res, next) =>
 {

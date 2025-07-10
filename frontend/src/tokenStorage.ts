@@ -1,3 +1,4 @@
+//local storage is saved across sessions. it's like cookies except it's cleared when ending private sessions
 export function storeToken(tok:any) : any
 {
     try
