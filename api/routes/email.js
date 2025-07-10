@@ -1,19 +1,11 @@
 const express = require('express');
-const { ObjectId } = require('mongodb');
 const { Resend } = require('resend');
 const { sendSuccessResponse, sendErrorResponse } = require('../utils/response');
 const { validateJWTMiddleware } = require('../middleware/auth');
+const User = require('../../models/users');
 
 const router = express.Router();
 const resend = new Resend(process.env.RESEND_API_KEY);
-
-// Database helper - will be set when router is initialized
-let getDatabase;
-
-const initializeRouter = (dbGetter) => {
-    getDatabase = dbGetter;
-    return router;
-};
 
 router.post('/emailSend', async (req, res, next) => {
     //incoming: login, email, userId, jwtToken
@@ -54,7 +46,7 @@ router.post('/emailSend', async (req, res, next) => {
 
         sendSuccessResponse(res, emailData, jwtToken, 200);
     } catch (error) {
-        sendErrorResponse(res, emailData);
+        sendErrorResponse(res, error.toString());
         console.log(error);
     }
 });
@@ -67,24 +59,22 @@ router.post('/emailVerification', validateJWTMiddleware, async (req, res, next) 
     const { userId, jwtToken } = req.body;
 
     if(!userId) {
-        sendErrorResponse(res, 'Missing userId');
-        return;
+        return sendErrorResponse(res, 'Missing userId');
     }
 
     //find associated user in the database and set emailVerified to true
     try {
-        const db = getDatabase();
-        const results = await db.collection('users').updateOne({_id:new ObjectId(userId)}, {$set: { emailVerified: true}});
+        const result = await User.findByIdAndUpdate(userId, { $set: { emailVerified: true } });
 
-        if(results.matchedCount == 0) {
-            sendErrorResponse(res, 'User does not exist');
-            return;
+        if(!result) {
+            return sendErrorResponse(res, 'User does not exist');
         }
+
+        sendSuccessResponse(res, {error:''}, jwtToken, 200);
+
     } catch(e) {
         sendErrorResponse(res, e.message);
     }
-
-    sendSuccessResponse(res, {error:''}, jwtToken, 200);
 });
 
-module.exports = { router: initializeRouter }; 
+module.exports = router; 

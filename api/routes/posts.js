@@ -1,5 +1,5 @@
 const express = require('express');
-const { ObjectId } = require('mongodb');
+const { ObjectId } = require('mongoose').Types;
 const multer = require('multer');
 const token = require('../../createJWT.js');
 const { sendResponse, sendErrorResponse, sendSuccessResponse } = require('../utils/response');
@@ -7,16 +7,14 @@ const { validateJWTMiddleware } = require('../middleware/auth');
 const { r2Client, getPresignedUrl, uploadFileToR2, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('../utils/r2');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
+// Mongoose Models
+const User = require('../../models/users');
+const Media = require('../../models/media');
+const Quest = require('../../models/quests');
+const CurrentQuest = require('../../models/CurrentQuest.js');
+
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
-
-// Database helper - will be set when router is initialized
-let getDatabase;
-
-const initializeRouter = (dbGetter) => {
-    getDatabase = dbGetter;
-    return router;
-};
 
 router.post('/uploadMedia', upload.single('file'), validateJWTMiddleware, async (req, res, next) => {
     // incoming: file, userId, questid, jwtToken
@@ -57,8 +55,7 @@ router.post('/uploadMedia', upload.single('file'), validateJWTMiddleware, async 
         const fileUrl = `${process.env.R2_PUBLIC_URL}/${objectKey}`;
 
         // Update or insert media info in MongoDB. This prevents duplicate records for the same file path.
-        const db = getDatabase();
-        await db.collection('media').updateOne(
+        await Media.updateOne(
             { userId: userId, questId: questId },
             {
                 $set: {
@@ -88,12 +85,7 @@ router.post('/getMedia', validateJWTMiddleware, async (req, res, next) => {
     }
 
     try {
-        const db = getDatabase();
-        
-        const mediaRecord = await db.collection('media').findOne(
-            { userId: userId, questId: questId },
-            { sort: { uploadTimestamp: -1 } } 
-        );
+        const mediaRecord = await Media.findOne({ userId, questId }).sort({ uploadTimestamp: -1 });
 
         if (!mediaRecord) {
             return sendErrorResponse(res, 'No media found for the given user and quest', jwtToken, 404);
@@ -133,8 +125,6 @@ router.post('/submitPost', upload.single('file'), validateJWTMiddleware, async (
     }
 
     try {
-        const db = getDatabase();
-        
         // Step 1: Generate a unique ID for the post *before* uploading.
         const questPostId = new ObjectId();
 
@@ -177,15 +167,15 @@ router.post('/submitPost', upload.single('file'), validateJWTMiddleware, async (
         };
 
         // Step 5: Update the user document.
-        const result = await db.collection('users').updateOne(
-            { _id: new ObjectId(userId) },
+        const result = await User.findByIdAndUpdate(
+            userId,
             {
                 $push: { questPosts: questPost },
                 $inc: { questCompleted: 1 }
             }
         );
 
-        if (result.matchedCount === 0) {
+        if (!result) {
             return sendErrorResponse(res, 'User not found', jwtToken, 404);
         }
 
@@ -212,69 +202,36 @@ router.post('/likePost', validateJWTMiddleware, async (req, res, next) => {
     }
 
     try {
-        const db = getDatabase();
-        
-        // Find the user document that contains the quest post
-        const user = await db.collection('users').findOne({
-            'questPosts._id': new ObjectId(questPostId)
-        });
+        const userWithPost = await User.findOne({ 'questPosts._id': questPostId });
 
-        if (!user) {
+        if (!userWithPost) {
             return sendErrorResponse(res, 'Quest post not found', jwtToken, 404);
         }
-
-        // Find the specific quest post
-        const questPost = user.questPosts.find(post => post._id.toString() === questPostId);
         
-        if (!questPost) {
-            return sendErrorResponse(res, 'Quest post not found', jwtToken, 404);
+        const post = userWithPost.questPosts.id(questPostId);
+        
+        if (!post) {
+             return sendErrorResponse(res, 'Quest post not found', jwtToken, 404);
         }
 
         let liked = false;
-        let updateOperation = {};
+        const userIndex = post.likedBy.indexOf(userId);
 
-        // Check if user is already in likedBy array
-        const userAlreadyLiked = questPost.likedBy && questPost.likedBy.includes(userId);
-
-        if (userAlreadyLiked) {
-            // Unlike: remove user from likedBy array and decrement likes
-            updateOperation = {
-                $pull: { 'questPosts.$.likedBy': userId },
-                $inc: { 'questPosts.$.likes': -1 }
-            };
+        if (userIndex > -1) {
+            // Unlike
+            post.likedBy.splice(userIndex, 1);
+            post.likes = Math.max(0, post.likes - 1);
             liked = false;
         } else {
-            // Like: add user to likedBy array and increment likes
-            updateOperation = {
-                $push: { 'questPosts.$.likedBy': userId },
-                $inc: { 'questPosts.$.likes': 1 }
-            };
+            // Like
+            post.likedBy.push(userId);
+            post.likes += 1;
             liked = true;
         }
 
-        // Update the quest post
-        const result = await db.collection('users').updateOne(
-            { 
-                _id: user._id,
-                'questPosts._id': new ObjectId(questPostId)
-            },
-            updateOperation
-        );
-
-        if (result.matchedCount === 0) {
-            return sendErrorResponse(res, 'Quest post not found during update', jwtToken, 404);
-        }
+        await userWithPost.save();
         
-        // Fetch the updated post again to get the accurate like count
-        const updatedUser = await db.collection('users').findOne(
-            { 'questPosts._id': new ObjectId(questPostId) },
-            { projection: { 'questPosts.$': 1 } }
-        );
-
-        const updatedPost = updatedUser.questPosts[0];
-        const likeCount = updatedPost.likes;
-
-        sendSuccessResponse(res, { success: true, liked: liked, likeCount: likeCount }, jwtToken);
+        sendSuccessResponse(res, { success: true, liked: liked, likeCount: post.likes }, jwtToken);
     }
     catch(e) {
         console.log('Like post error:', e.toString());
@@ -297,57 +254,33 @@ router.post('/flagPost', validateJWTMiddleware, async (req, res, next) => {
     }
 
     try {
-        const db = getDatabase();
-        
-        // Find the user document that contains the quest post
-        const user = await db.collection('users').findOne({
-            'questPosts._id': new ObjectId(questPostId)
-        });
+        const userWithPost = await User.findOne({ 'questPosts._id': questPostId });
 
-        if (!user) {
+        if (!userWithPost) {
             return sendErrorResponse(res, 'Quest post not found', jwtToken, 404);
         }
 
-        // Find the specific quest post
-        const questPost = user.questPosts.find(post => post._id.toString() === questPostId);
+        const post = userWithPost.questPosts.id(questPostId);
         
-        if (!questPost) {
+        if (!post) {
             return sendErrorResponse(res, 'Quest post not found', jwtToken, 404);
         }
 
         let flagged = false;
         let needsReview = false;
 
-        // Check if user is already in flaggedBy array
-        const userAlreadyFlagged = questPost.flaggedBy && questPost.flaggedBy.includes(userId);
+        const userAlreadyFlagged = post.flaggedBy.includes(userId);
 
         if (userAlreadyFlagged) {
-            // User already flagged this post, do nothing
             flagged = true;
-            needsReview = questPost.flaggedBy && questPost.flaggedBy.length >= 3;
         } else {
-            // Add user to flaggedBy array
-            const result = await db.collection('users').updateOne(
-                { 
-                    _id: user._id,
-                    'questPosts._id': new ObjectId(questPostId)
-                },
-                {
-                    $push: { 'questPosts.$.flaggedBy': userId },
-                    $inc: { 'questPosts.$.flagged': 1 }
-                }
-            );
-
-            if (result.matchedCount === 0) {
-                return sendErrorResponse(res, 'Quest post not found', jwtToken, 404);
-            }
-
+            post.flaggedBy.push(userId);
+            post.flagged += 1;
+            await userWithPost.save();
             flagged = true;
-            
-            // Check if we need to set needsReview (3 or more flags)
-            const newFlagCount = (questPost.flaggedBy ? questPost.flaggedBy.length : 0) + 1;
-            needsReview = newFlagCount >= 3;
         }
+        
+        needsReview = post.flaggedBy.length >= 3;
 
         sendSuccessResponse(res, { success: true, flagged: flagged, needsReview: needsReview }, jwtToken);
     }
@@ -362,20 +295,15 @@ router.post('/rotateQuest', async (req, res, next) => {
     // Can be called manually or by a cron job
 
     try {
-        const db = getDatabase();
-        
         // Step 1: Find all quests where isCycled is false
-        let availableQuests = await db.collection('quests').find({ isCycled: false }).toArray();
+        let availableQuests = await Quest.find({ isCycled: false });
         
         // Step 2: If no quests available, reset all quests to false
         if (availableQuests.length === 0) {
-            await db.collection('quests').updateMany(
-                {},
-                { $set: { isCycled: false } }
-            );
+            await Quest.updateMany({}, { $set: { isCycled: false } });
             
             // Fetch quests again after reset
-            availableQuests = await db.collection('quests').find({ isCycled: false }).toArray();
+            availableQuests = await Quest.find({ isCycled: false });
             
             console.log(`Reset all quests. Found ${availableQuests.length} quests available.`);
         }
@@ -396,16 +324,13 @@ router.post('/rotateQuest', async (req, res, next) => {
         const currentQuestDoc = {
             questId: selectedQuest._id,
             timestamp: new Date(),
-            questData: selectedQuest // Store the full quest data for reference
+            questData: selectedQuest.toObject() // Store the full quest data for reference
         };
         
-        await db.collection('currentquest').insertOne(currentQuestDoc);
+        await CurrentQuest.create(currentQuestDoc);
         
         // Step 5: Mark the selected quest as cycled
-        await db.collection('quests').updateOne(
-            { _id: selectedQuest._id },
-            { $set: { isCycled: true } }
-        );
+        await Quest.findByIdAndUpdate(selectedQuest._id, { $set: { isCycled: true } });
         
         console.log(`Rotated quest: ${selectedQuest._id} at ${currentQuestDoc.timestamp}`);
         
@@ -427,13 +352,10 @@ router.post('/rotateQuest', async (req, res, next) => {
     }
 });
 
-router.get('/currentQuest', async (req, res, next) => {
+router.get('/getCurrentQuest', async (req, res, next) => {
     // Get the current active quest
     try {
-        const db = getDatabase();
-        
-        const currentQuest = await db.collection('currentquest')
-            .findOne({}, { sort: { timestamp: -1 } });
+        const currentQuest = await CurrentQuest.findOne().sort({ timestamp: -1 });
         
         if (!currentQuest) {
             return sendResponse(res, { 
@@ -446,7 +368,7 @@ router.get('/currentQuest', async (req, res, next) => {
         sendResponse(res, {
             success: true,
             currentQuest: currentQuest,
-            questDescription: currentQuest.questData?.description,
+            questDescription: currentQuest.questData?.questDescription,
             timestamp: new Date()
         });
         
@@ -472,14 +394,12 @@ router.post('/getFeed', validateJWTMiddleware, async (req, res, next) => {
     }
 
     try {
-        const db = getDatabase();
-
         // Define the date range for "today"
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
-
+sendSuccessResponse
         // Aggregation pipeline to build the feed
         const pipeline = [
             // Match users who are not the requester and are verified
@@ -522,7 +442,7 @@ router.post('/getFeed', validateJWTMiddleware, async (req, res, next) => {
             }
         ];
 
-        const feedItems = await db.collection('users').aggregate(pipeline).toArray();
+        const feedItems = await User.aggregate(pipeline);
 
         // Generate signed URLs for media and PFPs
         const processedFeed = await Promise.all(feedItems.map(async (item) => {
@@ -566,19 +486,14 @@ router.post('/deletePost', validateJWTMiddleware, async (req, res, next) => {
     }
 
     try {
-        const db = getDatabase();
+        // Find the user and the specific post to ensure it exists before we do anything.
+        const user = await User.findOne({ _id: userId, 'questPosts._id': postId });
 
-        // Find the user and the specific post to get the mediaPath
-        const user = await db.collection('users').findOne(
-            { _id: new ObjectId(userId), 'questPosts._id': new ObjectId(postId) },
-            { projection: { 'questPosts.$': 1 } }
-        );
-
-        if (!user || !user.questPosts || user.questPosts.length === 0) {
+        if (!user) {
             return sendErrorResponse(res, 'Post not found or you do not have permission to delete it.', jwtToken, 404);
         }
 
-        const postToDelete = user.questPosts[0];
+        const postToDelete = user.questPosts.id(postId);
         const mediaPath = postToDelete.mediaPath;
 
         // Step 1: Delete the media from R2 if a path exists.
@@ -598,18 +513,13 @@ router.post('/deletePost', validateJWTMiddleware, async (req, res, next) => {
         }
 
         // Step 2: Pull the post from the array and decrement the quest count.
-        const result = await db.collection('users').updateOne(
-            { _id: new ObjectId(userId) },
-            { 
-                $pull: { questPosts: { _id: new ObjectId(postId) } },
+        await User.updateOne(
+            { _id: userId },
+            {
+                $pull: { questPosts: { _id: postId } },
                 $inc: { questCompleted: -1 }
             }
         );
-
-        if (result.modifiedCount === 0) {
-            // This case would be rare since we already found the post.
-            return sendErrorResponse(res, 'Failed to delete post from user profile.', jwtToken, 500);
-        }
 
         sendSuccessResponse(res, { success: true, message: 'Post deleted successfully.' }, jwtToken);
 
@@ -636,12 +546,10 @@ router.post('/editCaption', validateJWTMiddleware, async (req, res, next) => {
     const newCaption = caption !== undefined && caption !== null ? caption : '';
 
     try {
-        const db = getDatabase();
-
-        const result = await db.collection('users').updateOne(
+        const result = await User.updateOne(
             { 
-                _id: new ObjectId(userId), 
-                'questPosts._id': new ObjectId(postId) 
+                _id: userId, 
+                'questPosts._id': postId 
             },
             { 
                 $set: { 'questPosts.$.caption': newCaption } 
@@ -673,12 +581,7 @@ router.post('/hasCompletedCurrentQuest', validateJWTMiddleware, async (req, res,
     }
 
     try {
-        const db = getDatabase();
-
-        const user = await db.collection('users').findOne(
-            { _id: new ObjectId(userId) },
-            { projection: { questPosts: 1 } }
-        );
+        const user = await User.findById(userId).select('questPosts');
 
         if (!user || !user.questPosts || user.questPosts.length === 0) {
             return sendSuccessResponse(res, { success: true, hasCompleted: false, post: null }, jwtToken);
@@ -697,7 +600,7 @@ router.post('/hasCompletedCurrentQuest', validateJWTMiddleware, async (req, res,
                       postDate.getDate() === today.getDate();
 
         if (isToday) {
-            sendSuccessResponse(res, { success: true, hasCompleted: true, post: mostRecentPost }, jwtToken);
+            sendSuccessResponse(res, { success: true, hasCompleted: true, post: mostRecentPost.toObject() }, jwtToken);
         } else {
             sendSuccessResponse(res, { success: true, hasCompleted: false, post: null }, jwtToken);
         }
@@ -708,4 +611,4 @@ router.post('/hasCompletedCurrentQuest', validateJWTMiddleware, async (req, res,
     }
 });
 
-module.exports = { router: initializeRouter }; 
+module.exports = router; 

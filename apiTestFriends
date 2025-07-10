@@ -12,7 +12,7 @@ LOGIN_SCRIPT="./apiTestLogin.sh"
 
 # !! IMPORTANT !!
 # Manually set the friend's user ID you want to test with here.
-FRIEND_ID_TO_TEST="686e9375f6f1b4f03cf038df"
+FRIEND_ID_TO_TEST="686c553cdfe4d14f8ab420ba"
 
 
 # --- Step 1: Login to get credentials ---

@@ -5,7 +5,7 @@
 
 # --- Configuration ---
 API_BASE_URL="http://localhost:5001/api"
-CURRENT_QUEST_URL="$API_BASE_URL/currentQuest"
+CURRENT_QUEST_URL="$API_BASE_URL/getCurrentQuest"
 SUBMIT_POST_URL="$API_BASE_URL/submitPost"
 LIKE_POST_URL="$API_BASE_URL/likePost"
 FLAG_POST_URL="$API_BASE_URL/flagPost"

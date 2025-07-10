@@ -1,29 +1,44 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-require('dotenv').config();
-
-const MongoClient = require('mongodb').MongoClient;
-const url = process.env.MONGODB_URI;
-const client = new MongoClient(url);
-client.connect();
+const mongoose = require('mongoose');
+const initializeAPI = require('./api/index.js'); 
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Use the new modular API structure
-const initializeAPI = require('./api');
-const apiRouter = initializeAPI(client);
-app.use('/api', apiRouter);
+const PORT = process.env.PORT || 5001;
+const MONGO_URI = process.env.MONGODB_URI;
 
-app.use((req, res, next) =>
-{
-    //can we please fix access control origin before presentation. having all IPs allowed is BAD.
+mongoose.connect(MONGO_URI)
+  .then(() => {
+    console.log('Successfully connected to MongoDB Atlas!');
+    
+    // Initialize API routes
+    initializeAPI(app);
+
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+    
+  })
+  .catch((error) => {
+    console.log('Unable to connect to MongoDB Atlas.');
+    console.error(error);
+  });
+
+// Global error handler
+app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+    );
+    res.setHeader(
+        'Access-Control-Allow-Methods',
+        'GET, POST, PATCH, DELETE, OPTIONS'
+    );
     next();
 });
-
-app.listen(5001); //start Node + Express server on port 5000

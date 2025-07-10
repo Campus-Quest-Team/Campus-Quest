@@ -1,5 +1,6 @@
 require('express');
 require('mongodb');
+require('mongoose');
 
 //Resend API
 const { Resend } = require('resend');
@@ -10,6 +11,12 @@ const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = re
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const multer = require('multer');
 const { ObjectId } = require('mongodb');
+
+//model requirements for Mongoose
+const User = require('./models/users.js');
+const Media = require('./models/media.js');
+const Quest = require('./models/quests.js');
+const CurrentQuest = require('./models/currentquest.js');
 
 // Add this configuration after the existing imports
 const upload = multer({ storage: multer.memoryStorage() });
@@ -24,7 +31,7 @@ const r2Client = new S3Client({
     },
 });
 
-exports.setApp = function(app, client)
+exports.setApp = function(app)
 {
     var token = require('./createJWT.js');
     
@@ -172,13 +179,11 @@ exports.setApp = function(app, client)
         const { login, password } = req.body;
 
         try {
-            const db = getDatabase();
-            const results = await db.collection('users').find({login: login, password: password}).toArray();
+            const user = await User.findOne({login: login, password: password})
 
-            if(results.length > 0)
+            if(user)
             {
-                const user = results[0];
-                
+
                 // Check if email is verified
                 if(!user.emailVerified)
                 {
@@ -210,41 +215,23 @@ exports.setApp = function(app, client)
         const { login, password, firstName, lastName, email } = req.body;
 
         try {
-            const db = getDatabase();
-
             // Check if user already exists
-            const existingUser = await db.collection('users').find({login: login}).toArray();
+            const existingUser = await User.findOne({login: login});
 
-            if(existingUser.length > 0)
+            if(existingUser)
             {
                 return sendResponse(res, { userId: null, firstName: '', lastName: '', error: 'User already exists' });
             }
 
             // Insert new user with complete structure
-            const newUser = {
-                login: login,
-                password: password,
-                email: email || null,
-                emailVerified: false,
-                questCompleted: 0,
-                mobileDeviceToken: null,
-                firstName: firstName,
-                lastName: lastName,
-                profile: {
-                    displayName: `${firstName} ${lastName}`,
-                    PFP: 'images/pfp-default.png',
-                    bio: "Make your bio here",
-                },
-                settings: {
-                    notifications: true
-                },
-                createdAt: new Date(),
-                questPosts: [],
-                friends: []
-            };
-
-            const result = await db.collection('users').insertOne(newUser);
-            const userId = result.insertedId;
+            const newUser = new User({
+                login, password, email: email || null, emailVerified: false,
+                questCompleted: 0, mobileDeviceToken: null, firstName, lastName,
+                profile: { displayName: `${firstName} ${lastName}`, PFP: null, bio: "Make your bio here" },
+                settings: { notifications: true }, questPosts: []
+            });
+            const result = await newUser.save();
+            const userId = result._id;
 
             sendResponse(res, { userId: userId, firstName: firstName, lastName: lastName, error: '' });
         } catch(e) {
@@ -297,16 +284,10 @@ exports.setApp = function(app, client)
             const fileUrl = `${process.env.R2_PUBLIC_URL}/${objectKey}`;
 
             // Update or insert media info in MongoDB. This prevents duplicate records for the same file path.
-            const db = getDatabase();
-            await db.collection('media').updateOne(
+            await Media.findOneAndUpdate(
                 { userId: userId, questId: questId },
-                {
-                    $set: {
-                        filePath: objectKey,
-                        uploadTimestamp: new Date()
-                    }
-                },
-                { upsert: true }
+                { filePath: objectKey, uploadTimestamp: new Date() },
+                { upsert: true, new: true }
             );
 
             sendSuccessResponse(res, { fileUrl: fileUrl, error: '' }, jwtToken);
@@ -330,12 +311,7 @@ exports.setApp = function(app, client)
         }
 
         try {
-            const db = getDatabase();
-            
-            const mediaRecord = await db.collection('media').findOne(
-                { userId: userId, questId: questId },
-                { sort: { uploadTimestamp: -1 } } 
-            );
+            const mediaRecord = await Media.findOne({ userId: userId, questId: questId }).sort({ uploadTimestamp: -1 });
 
             if (!mediaRecord) {
                 return sendErrorResponse(res, 'No media found for the given user and quest', jwtToken, 404);
@@ -377,8 +353,6 @@ exports.setApp = function(app, client)
 
         try
         {
-            const db = getDatabase();
-            
             // Step 1: Generate a unique ID for the post *before* uploading.
             const questPostId = new ObjectId();
 
@@ -420,13 +394,14 @@ exports.setApp = function(app, client)
                 flaggedBy: []
             };
 
-            // Step 5: Update the user document.
-            const result = await db.collection('users').updateOne(
-                { _id: new ObjectId(userId) },
+            // Update the user document: add quest post to questPosts array and increment questCompleted
+            const result = await User.findByIdAndUpdate(
+                userId,
                 {
                     $push: { questPosts: questPost },
                     $inc: { questCompleted: 1 }
-                }
+                },
+                { new: true }
             );
 
             if (result.matchedCount === 0) {
@@ -459,11 +434,9 @@ exports.setApp = function(app, client)
 
         try
         {
-            const db = getDatabase();
-            
             // Find the user document that contains the quest post
-            const user = await db.collection('users').findOne({
-                'questPosts._id': new ObjectId(questPostId)
+            const user = await User.findOne({
+                'questPosts._id': questPostId
             });
 
             if (!user) {
@@ -499,11 +472,11 @@ exports.setApp = function(app, client)
                 liked = true;
             }
 
-            // Update the quest post
-            const result = await db.collection('users').updateOne(
-                { 
+            // Update the quest postdb
+            const result = await User.updateOne(
+                {
                     _id: user._id,
-                    'questPosts._id': new ObjectId(questPostId)
+                    'questPosts._id': questPostId
                 },
                 updateOperation
             );
@@ -538,11 +511,9 @@ exports.setApp = function(app, client)
 
         try
         {
-            const db = getDatabase();
-            
             // Find the user document that contains the quest post
-            const user = await db.collection('users').findOne({
-                'questPosts._id': new ObjectId(questPostId)
+            const user = await User.findOne({
+                'questPosts._id': questPostId
             });
 
             if (!user) {
@@ -568,10 +539,10 @@ exports.setApp = function(app, client)
                 needsReview = questPost.flaggedBy && questPost.flaggedBy.length >= 3;
             } else {
                 // Add user to flaggedBy array
-                const result = await db.collection('users').updateOne(
-                    { 
+                const result = await User.updateOne(
+                    {
                         _id: user._id,
-                        'questPosts._id': new ObjectId(questPostId)
+                        'questPosts._id': questPostId
                     },
                     {
                         $push: { 'questPosts.$.flaggedBy': userId },
@@ -936,12 +907,8 @@ exports.setApp = function(app, client)
 
         try
         {
-            const db = getDatabase();
-            
             // Find the user and get current notifications setting
-            const user = await db.collection('users').findOne({
-                _id: new ObjectId(userId)
-            });
+            const user = await User.findById(userId);
 
             if (!user) {
                 return sendErrorResponse(res, 'User not found', jwtToken, 404);
@@ -956,11 +923,12 @@ exports.setApp = function(app, client)
             const newNotifications = !currentNotifications;
 
             // Update the notifications setting
-            const result = await db.collection('users').updateOne(
-                { _id: new ObjectId(userId) },
+            const result = await User.findByIdAndUpdate(
+                userId,
                 {
                     $set: { 'settings.notifications': newNotifications }
-                }
+                },
+                { new: true }
             );
 
             if (result.matchedCount === 0) {
@@ -983,21 +951,19 @@ exports.setApp = function(app, client)
 
         try
         {
-            const db = getDatabase();
-            
             // Step 1: Find all quests where isCycled is false
-            let availableQuests = await db.collection('quests').find({ isCycled: false }).toArray();
-            
+            let availableQuests = await Quest.find({ isCycled: false })
+
             // Step 2: If no quests available, reset all quests to false
             if (availableQuests.length === 0) {
-                await db.collection('quests').updateMany(
+                await Quest.updateMany(
                     {},
                     { $set: { isCycled: false } }
                 );
                 
                 // Fetch quests again after reset
-                availableQuests = await db.collection('quests').find({ isCycled: false }).toArray();
-                
+                availableQuests = await Quest.find({ isCycled: false });
+
                 console.log(`Reset all quests. Found ${availableQuests.length} quests available.`);
             }
             
@@ -1014,17 +980,16 @@ exports.setApp = function(app, client)
             const selectedQuest = availableQuests[randomIndex];
             
             // Step 4: Insert into currentquest table
-            const currentQuestDoc = {
+            const currentQuestDoc = new CurrentQuest({
                 questId: selectedQuest._id,
                 timestamp: new Date(),
-                questData: selectedQuest // Store the full quest data for reference
-            };
-            
-            await db.collection('currentquest').insertOne(currentQuestDoc);
-            
+                questData: selectedQuest
+            });
+            await currentQuestDoc.save();
+
             // Step 5: Mark the selected quest as cycled
-            await db.collection('quests').updateOne(
-                { _id: selectedQuest._id },
+            await Quest.findByIdAndUpdate(
+                selectedQuest._id,
                 { $set: { isCycled: true } }
             );
             
@@ -1054,11 +1019,8 @@ exports.setApp = function(app, client)
         // Get the current active quest
         try
         {
-            const db = getDatabase();
-            
-            const currentQuest = await db.collection('currentquest')
-                .findOne({}, { sort: { timestamp: -1 } });
-            
+            const currentQuest = await CurrentQuest.findOne({}, { sort: { timestamp: -1 } });
+
             if (!currentQuest) {
                 return sendResponse(res, { 
                     success: false, 
@@ -1144,8 +1106,7 @@ exports.setApp = function(app, client)
 
         //find associated user in the database and set emailVerified to true
         try {
-            const db = getDatabase();
-            const results = await db.collection('users').updateOne({_id:new ObjectId(userId)}, {$set: { emailVerified: true}});
+            const results = await User.findByIdAndUpdate(userId, {$set: { emailVerified: true}});
 
             if(results.matchedCount == 0) {
                 sendErrorResponse(res, 'User does not exist');
@@ -1175,8 +1136,6 @@ exports.setApp = function(app, client)
         }
 
         try {
-            const db = getDatabase();
-
             let updateObj = {};
             if(displayName) {
                 updateObj['profile.displayName'] = displayName;
@@ -1185,10 +1144,7 @@ exports.setApp = function(app, client)
                 updateObj['profile.bio'] = bio;
             }
 
-            const results = await db.collection('users').updateOne(
-                {_id: new ObjectId(userId)},
-                {$set: updateObj}
-            );
+            const results = await User.findByIdAndUpdate(userId, {$set: updateObj});
 
             if(results.matchedCount == 0) {
                 sendErrorResponse(res, 'User does not exist');
@@ -1213,9 +1169,7 @@ exports.setApp = function(app, client)
         }
 
         try {
-            const db = getDatabase();
-
-            const user = await db.collection('users').findOne({_id: new ObjectId(userId)});
+            const user = await User.findById(userId);
 
             if(!user) {
                 sendErrorResponse(res, 'User does not exist');
@@ -1223,10 +1177,10 @@ exports.setApp = function(app, client)
             }
 
             // Delete user's media files from database
-            await db.collection('media').deleteMany({userId: userId});
+            await Media.deleteMany({userId: userId});
 
             // Delete the user from users collection
-            const deleteResult = await db.collection('users').deleteOne({_id: new ObjectId(userId)});
+            const deleteResult = await User.findByIdAndDelete(userId);
 
             if(deleteResult.deletedCount === 0) {
                 sendErrorResponse(res, 'Failed to delete user');

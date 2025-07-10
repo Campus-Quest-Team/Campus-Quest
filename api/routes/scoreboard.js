@@ -2,16 +2,9 @@ const express = require('express');
 const { sendSuccessResponse, sendErrorResponse } = require('../utils/response');
 const { validateJWTMiddleware } = require('../middleware/auth');
 const { getPresignedUrl } = require('../utils/r2');
+const User = require('../../models/users');
 
 const router = express.Router();
-
-// Database helper - will be set when router is initialized
-let getDatabase;
-
-const initializeRouter = (dbGetter) => {
-    getDatabase = dbGetter;
-    return router;
-};
 
 router.post('/fetchScoreboard', validateJWTMiddleware, async (req, res, next) => {
     // incoming: jwtToken
@@ -20,13 +13,9 @@ router.post('/fetchScoreboard', validateJWTMiddleware, async (req, res, next) =>
     const { jwtToken } = req.body;
 
     try {
-        const db = getDatabase();
-
-        const users = await db.collection('users').find({ emailVerified: true }).project({
-            'profile.displayName': 1,
-            'profile.PFP': 1,
-            'questCompleted': 1
-        }).toArray();
+        const users = await User.find({ emailVerified: true })
+            .select('profile.displayName profile.PFP questCompleted')
+            .sort({ questCompleted: -1, 'profile.displayName': 1 });
 
         const scoreboardData = await Promise.all(users.map(async (user) => {
             const pfpUrl = await getPresignedUrl(user.profile?.PFP);
@@ -38,13 +27,6 @@ router.post('/fetchScoreboard', validateJWTMiddleware, async (req, res, next) =>
             };
         }));
         
-        scoreboardData.sort((a, b) => {
-            if (b.questCompleted !== a.questCompleted) {
-                return b.questCompleted - a.questCompleted;
-            }
-            return (a.displayName || '').localeCompare(b.displayName || '');
-        });
-
         sendSuccessResponse(res, { scoreboard: scoreboardData }, jwtToken);
     }
     catch(e) {
@@ -53,4 +35,4 @@ router.post('/fetchScoreboard', validateJWTMiddleware, async (req, res, next) =>
     }
 });
 
-module.exports = { router: initializeRouter }; 
+module.exports = router; 

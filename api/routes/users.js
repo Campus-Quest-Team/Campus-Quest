@@ -1,21 +1,13 @@
 const express = require('express');
-const { ObjectId } = require('mongodb');
 const multer = require('multer');
 const token = require('../../createJWT.js');
 const { sendResponse, sendErrorResponse, sendSuccessResponse } = require('../utils/response');
 const { validateJWTMiddleware } = require('../middleware/auth');
 const { r2Client, getPresignedUrl, uploadPFPToR2, DeleteObjectCommand } = require('../utils/r2');
+const User = require('../../models/users');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
-
-// Database helper - will be set when router is initialized
-let getDatabase;
-
-const initializeRouter = (dbGetter) => {
-    getDatabase = dbGetter;
-    return router;
-};
 
 router.post('/login', async (req, res, next) => {
     // incoming: login, password
@@ -24,12 +16,9 @@ router.post('/login', async (req, res, next) => {
     const { login, password } = req.body;
 
     try {
-        const db = getDatabase();
-        const results = await db.collection('users').find({login: login, password: password}).toArray();
+        const user = await User.findOne({ login, password });
 
-        if(results.length > 0) {
-            const user = results[0];
-            
+        if(user) {
             // Check if email is verified
             if(!user.emailVerified) {
                 return sendResponse(res, {error: "Email not yet verified"});
@@ -58,17 +47,15 @@ router.post('/register', async (req, res, next) => {
     const { login, password, firstName, lastName, email } = req.body;
 
     try {
-        const db = getDatabase();
-
         // Check if user already exists
-        const existingUser = await db.collection('users').find({login: login}).toArray();
+        const existingUser = await User.findOne({ login });
 
-        if(existingUser.length > 0) {
+        if(existingUser) {
             return sendResponse(res, { userId: null, firstName: '', lastName: '', error: 'User already exists' });
         }
 
         // Insert new user with complete structure
-        const newUser = {
+        const newUser = new User({
             login: login,
             password: password,
             email: email || null,
@@ -88,10 +75,10 @@ router.post('/register', async (req, res, next) => {
             createdAt: new Date(),
             questPosts: [],
             friends: []
-        };
+        });
 
-        const result = await db.collection('users').insertOne(newUser);
-        const userId = result.insertedId;
+        const result = await newUser.save();
+        const userId = result._id;
 
         sendResponse(res, { userId: userId, firstName: firstName, lastName: lastName, error: '' });
     } catch(e) {
@@ -110,20 +97,7 @@ router.post('/getProfile', validateJWTMiddleware, async (req, res, next) => {
     }
 
     try {
-        const db = getDatabase();
-
-        const user = await db.collection('users').findOne(
-            { _id: new ObjectId(userId) },
-            { 
-                projection: { 
-                    questCompleted: 1, 
-                    'profile.displayName': 1, 
-                    'profile.PFP': 1, 
-                    questPosts: 1,
-                    _id: 0
-                } 
-            }
-        );
+        const user = await User.findById(userId).select('questCompleted profile.displayName profile.PFP questPosts');
 
         if (!user) {
             return sendErrorResponse(res, 'User not found', jwtToken, 404);
@@ -133,7 +107,7 @@ router.post('/getProfile', validateJWTMiddleware, async (req, res, next) => {
 
         const postsWithUrls = user.questPosts ? await Promise.all(user.questPosts.map(async (post) => {
             const mediaUrl = await getPresignedUrl(post.mediaPath);
-            const { mediaPath, ...rest } = post;
+            const { mediaPath, ...rest } = post.toObject(); // use toObject() for mongoose subdocuments
             return { ...rest, mediaUrl };
         })) : [];
 
@@ -168,12 +142,7 @@ router.post('/editPFP', upload.single('file'), validateJWTMiddleware, async (req
     }
 
     try {
-        const db = getDatabase();
-
-        const user = await db.collection('users').findOne(
-            { _id: new ObjectId(userId) },
-            { projection: { 'profile.PFP': 1 } }
-        );
+        const user = await User.findById(userId).select('profile.PFP');
 
         if (!user) {
             return sendErrorResponse(res, 'User not found', jwtToken, 404);
@@ -200,15 +169,8 @@ router.post('/editPFP', upload.single('file'), validateJWTMiddleware, async (req
         const newPfpPath = await uploadPFPToR2(file, userId);
 
         // Step 3: Update the database with the new PFP path.
-        const result = await db.collection('users').updateOne(
-            { _id: new ObjectId(userId) },
-            { $set: { 'profile.PFP': newPfpPath } }
-        );
-
-        if (result.matchedCount === 0) {
-            // This case should be rare, but it's good practice to handle it.
-            return sendErrorResponse(res, 'User not found during update', jwtToken, 404);
-        }
+        user.profile.PFP = newPfpPath;
+        await user.save();
 
         // Step 4: Return the signed URL for the new PFP.
         const signedUrl = await getPresignedUrl(newPfpPath);
@@ -232,12 +194,7 @@ router.post('/toggleNotifications', validateJWTMiddleware, async (req, res, next
     }
 
     try {
-        const db = getDatabase();
-        
-        // Find the user and get current notifications setting
-        const user = await db.collection('users').findOne({
-            _id: new ObjectId(userId)
-        });
+        const user = await User.findById(userId);
 
         if (!user) {
             return sendErrorResponse(res, 'User not found', jwtToken, 404);
@@ -250,18 +207,8 @@ router.post('/toggleNotifications', validateJWTMiddleware, async (req, res, next
 
         // Toggle to the inverse
         const newNotifications = !currentNotifications;
-
-        // Update the notifications setting
-        const result = await db.collection('users').updateOne(
-            { _id: new ObjectId(userId) },
-            {
-                $set: { 'settings.notifications': newNotifications }
-            }
-        );
-
-        if (result.matchedCount === 0) {
-            return sendErrorResponse(res, 'User not found', jwtToken, 404);
-        }
+        user.settings.notifications = newNotifications;
+        await user.save();
 
         sendSuccessResponse(res, { success: true, notifications: newNotifications }, jwtToken);
     }
@@ -286,7 +233,6 @@ router.post('/editProfile', validateJWTMiddleware, async (req, res, next) => {
     }
 
     try {
-        const db = getDatabase();
         const updateFields = {};
 
         if (displayName) {
@@ -296,19 +242,15 @@ router.post('/editProfile', validateJWTMiddleware, async (req, res, next) => {
             updateFields['profile.bio'] = bio;
         }
 
-        const result = await db.collection('users').updateOne(
-            { _id: new ObjectId(userId) },
-            { $set: updateFields }
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $set: updateFields },
+            { new: true, select: 'profile.displayName profile.bio' }
         );
 
-        if (result.matchedCount === 0) {
+        if (!updatedUser) {
             return sendErrorResponse(res, 'User not found', jwtToken, 404);
         }
-
-        const updatedUser = await db.collection('users').findOne(
-            { _id: new ObjectId(userId) },
-            { projection: { 'profile.displayName': 1, 'profile.bio': 1, _id: 0 } }
-        );
 
         sendSuccessResponse(res, { success: true, updatedProfile: updatedUser.profile }, jwtToken);
 
@@ -331,12 +273,7 @@ router.post('/deleteUser', validateJWTMiddleware, async (req, res, next) => {
     }
 
     try {
-        const db = getDatabase();
-
-        const user = await db.collection('users').findOne(
-            { _id: new ObjectId(userId) },
-            { projection: { 'profile.PFP': 1, questPosts: 1 } }
-        );
+        const user = await User.findById(userId).select('profile.PFP questPosts');
 
         if (!user) {
             return sendErrorResponse(res, 'User not found', jwtToken, 404);
@@ -378,15 +315,15 @@ router.post('/deleteUser', validateJWTMiddleware, async (req, res, next) => {
         }
         
         // Remove user from friends lists of other users
-        await db.collection('users').updateMany(
-            { 'friends.friendId': new ObjectId(userId) },
-            { $pull: { friends: { friendId: new ObjectId(userId) } } }
+        await User.updateMany(
+            { friends: userId },
+            { $pull: { friends: userId } }
         );
 
         // Delete the user from the database
-        const result = await db.collection('users').deleteOne({ _id: new ObjectId(userId) });
+        const result = await User.findByIdAndDelete(userId);
 
-        if (result.deletedCount === 0) {
+        if (!result) {
             // This should not happen if we found the user before
             return sendErrorResponse(res, 'Failed to delete user from database.', jwtToken, 500);
         }
@@ -399,4 +336,4 @@ router.post('/deleteUser', validateJWTMiddleware, async (req, res, next) => {
     }
 });
 
-module.exports = { router: initializeRouter }; 
+module.exports = router; 

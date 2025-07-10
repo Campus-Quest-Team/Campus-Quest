@@ -1,6 +1,9 @@
-./node_modules
 ./frontend/node_modules
-./.env
 node_modules
 .env
-.gitignore
+apiTestPost
+apiTestScoreboard
+apiTestProfile
+apiTestFriends
+apiTestRegister
+apiTestLogin.sh
