@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { buildPath } from './Path';
 import { storeToken } from '../tokenStorage';
 import { jwtDecode } from 'jwt-decode';
+import { useNavigate } from 'react-router-dom';
 
 interface UserPayload {
     userId: number;
@@ -15,6 +16,7 @@ function Login()
     const [message, setMessage] = useState('');
     const [loginName, setLoginName] = React.useState('');
     const [loginPassword, setPassword] = React.useState('');
+    const navigation = useNavigate();
 
     async function doLogin(event:any) : Promise<void>
     {
@@ -82,13 +84,26 @@ function Login()
         setPassword(event.target.value);
     }
 
+    function handleRegisterRedirect() {
+        navigation('/register');
+    };
+
     return (
         <div id="loginDiv">
-            <span id="inner-title">PLEASE LOG IN</span><br />
-            <input type="text" id="loginName" placeholder="Username" onChange={handleSetLoginName}/><br />
-            <input type="password" id="loginPassword" placeholder="Password" onChange={handleSetPassword}/><br />
-            <input type="submit" id="loginButton" className="buttons" value="Do It" onClick={doLogin} />
-            <span id="loginResult">{message}</span>
+            <span id="inner-title">PLEASE LOG IN</span><br /><br />
+            <form>
+                <div>
+                    <label>Username:</label><br />
+                    <input type="text" id="loginName" placeholder="Username" onChange={handleSetLoginName}/>
+                </div><br />
+                <div>
+                    <label>Password:</label><br />
+                    <input type="password" id="loginPassword" placeholder="Password" onChange={handleSetPassword}/>
+                </div><br />
+                <input type="submit" id="loginButton" className="buttons" value="Login" onClick={doLogin} />
+            </form>
+            <span id="loginResult">{message}</span><br />
+            <button id="registerRedirect" onClick={handleRegisterRedirect}>Create a new account</button>
         </div>
     );
 };
