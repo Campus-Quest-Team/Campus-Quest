@@ -90,6 +90,7 @@ function CardUI()
     return(
         <div id="cardUIDiv">
             <br />
+            <h2>Card UI</h2>
             <input type="text" id="searchText" placeholder="Card To Search For" onChange={handleSearchTextChange} />
             <button type="button" id="searchCardButton" className="buttons" onClick={searchCard}> Search Card </button> <br />
             <span id="cardSearchResult">{searchResults}</span>
