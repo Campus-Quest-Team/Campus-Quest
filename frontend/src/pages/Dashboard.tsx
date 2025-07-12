@@ -1,5 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import '../styles/Dashboard.css'; // Optional CSS for layout/styling
+import { retrieveToken } from '../tokenStorage';
+import { useNavigate } from 'react-router';
+import { jwtDecode } from 'jwt-decode';
+
+
+interface UserPayload {
+  userId: number;
+  firstName: string;
+  lastName: string;
+  iat: number;
+}
 
 function Dashboard() {
   const quests = ['Quest 1', 'Quest 2', 'Quest 3'];
@@ -8,6 +19,28 @@ function Dashboard() {
     { name: 'User 2', quests: '1/3' },
     { name: 'User 3', quests: '2/3' },
   ];
+  const [user, setUser] = useState<UserPayload | null>(null);
+  const navigate = useNavigate();
+
+
+  useEffect(() => {
+    const token = retrieveToken();
+
+    if (!token) {
+      navigate('/login'); // Redirect if token is missing
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode<UserPayload>(token);
+      setUser(decoded);
+    } catch {
+      console.error('Invalid token');
+      navigate('/login'); // Redirect if token is invalid
+    }
+  }, [navigate]);
+
+  if (!user) return null; // Or a loading spinner
 
   return (
     <div className="dashboard-container">
@@ -76,7 +109,15 @@ function Dashboard() {
   );
 }
 
-function PostCard({ user, title, imageUrl, caption, likes }) {
+interface PostCardProps {
+  user: string;
+  title: string;
+  imageUrl: string;
+  caption: string;
+  likes: number;
+}
+
+function PostCard({ user, title, imageUrl, caption, likes }: PostCardProps) {
   return (
     <div className="post-card">
       <div className="post-header">
