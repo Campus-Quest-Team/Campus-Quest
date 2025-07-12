@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import '../styles/Dashboard.css'; // Optional CSS for layout/styling
-import { retrieveToken } from '../tokenStorage';
+import { clearToken, isTokenValid, retrieveToken } from '../tokenStorage';
 import { useNavigate } from 'react-router';
 import { jwtDecode } from 'jwt-decode';
 
@@ -22,17 +22,26 @@ function Dashboard() {
   const [user, setUser] = useState<UserPayload | null>(null);
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    clearToken();
+    navigate('/login');
+  };
+
+
 
   useEffect(() => {
-    const token = retrieveToken();
 
-    if (!token) {
+    if (!isTokenValid()) {
       navigate('/login'); // Redirect if token is missing
       return;
     }
 
+    const token = retrieveToken();
+
+    // Ensure token is a string before decoding
+
     try {
-      const decoded = jwtDecode<UserPayload>(token);
+      const decoded = jwtDecode<UserPayload>(token.accessToken);
       setUser(decoded);
     } catch {
       console.error('Invalid token');
@@ -86,6 +95,11 @@ function Dashboard() {
         <div className="leaderboard-link">
           <p>🏆 Leaderboard</p>
         </div>
+
+        <button className="logout-button" onClick={handleLogout}>
+  🚪 Logout
+</button>
+
       </div>
 
       {/* Feed */}

@@ -1,5 +1,9 @@
 //local storage is saved across sessions. it's like cookies except it's cleared when ending private sessions
-export function storeToken(tok:any) : any
+interface Token {
+    accessToken: string;
+}
+
+export function storeToken(tok: Token): void
 {
     try
     {
@@ -11,9 +15,9 @@ export function storeToken(tok:any) : any
     }
 }
 
-export function retrieveToken() : any
+export function retrieveToken(): Token
 {
-    var ud;
+    let ud: string | null = null;
     try
     {
         ud = localStorage.getItem('token_data');
@@ -22,5 +26,24 @@ export function retrieveToken() : any
     {
         console.log(e);
     }
-    return ud;
+    if (ud !== null) {
+        return { accessToken: ud };
+    } else {
+        throw new Error("No token found in localStorage");
+    }
+}
+
+export function isTokenValid(): boolean {
+  try {
+    const token = retrieveToken();
+    // You can add more validation logic here if needed
+    return !!token.accessToken;
+  } catch{
+    return false; // Token retrieval failed, consider it invalid
+  }
+}
+
+export function clearToken(): void {
+  localStorage.removeItem('token_data'); // Use the correct key from `storeToken`
+  localStorage.removeItem('user_data');  // Optional: clear user info too
 }
