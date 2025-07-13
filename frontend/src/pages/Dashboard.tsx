@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import '../styles/Dashboard.css'; // Optional CSS for layout/styling
+import { useEffect, useState } from 'react';
+import '../styles/Dashboard.css';
 import { clearToken, isTokenValid, retrieveToken } from '../tokenStorage';
 import { useNavigate } from 'react-router';
 import { jwtDecode } from 'jwt-decode';
@@ -32,24 +32,23 @@ function Dashboard() {
   useEffect(() => {
 
     if (!isTokenValid()) {
-      navigate('/login'); // Redirect if token is missing
+      navigate('/login');
       return;
     }
 
     const token = retrieveToken();
 
-    // Ensure token is a string before decoding
-
+    // Logout
     try {
       const decoded = jwtDecode<UserPayload>(token.accessToken);
       setUser(decoded);
     } catch {
       console.error('Invalid token');
-      navigate('/login'); // Redirect if token is invalid
+      navigate('/login');
     }
   }, [navigate]);
 
-  if (!user) return null; // Or a loading spinner
+  if (!user) return null;
 
   return (
     <div className="dashboard-container">
@@ -107,14 +106,14 @@ function Dashboard() {
         <PostCard
           user="User 1234"
           title="FIND THE HORSEMAN"
-          imageUrl="https://yourdomain.com/horseman.jpg"
+          imageUrl=""
           caption="Caption words and stuff"
           likes={327}
         />
         <PostCard
           user="User 1234"
           title="WHERE IS KNIGHTRO?"
-          imageUrl="https://yourdomain.com/knightro.jpg"
+          imageUrl=""
           caption=""
           likes={0}
         />
@@ -130,7 +129,8 @@ interface PostCardProps {
   caption: string;
   likes: number;
 }
-
+// PostCard component
+// Displays user posts with title, image, caption, and likes
 function PostCard({ user, title, imageUrl, caption, likes }: PostCardProps) {
   return (
     <div className="post-card">

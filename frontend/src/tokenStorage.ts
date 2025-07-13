@@ -36,14 +36,13 @@ export function retrieveToken(): Token
 export function isTokenValid(): boolean {
   try {
     const token = retrieveToken();
-    // You can add more validation logic here if needed
     return !!token.accessToken;
   } catch{
-    return false; // Token retrieval failed, consider it invalid
+    return false;
   }
 }
 
 export function clearToken(): void {
-  localStorage.removeItem('token_data'); // Use the correct key from `storeToken`
-  localStorage.removeItem('user_data');  // Optional: clear user info too
+  localStorage.removeItem('token_data');
+  localStorage.removeItem('user_data');
 }
