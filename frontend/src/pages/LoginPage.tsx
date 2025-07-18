@@ -63,7 +63,7 @@ function LoginPage() {
   return (
     <div className="login-page-wrapper">
       <div id="loginDiv">
-        <span id="inner-title">CAMPUS QUEST</span>
+        <span id="inner-title">Campus Quest</span><br /><br />
         <p className="login-subtitle">Please log in to continue</p>
         <form onSubmit={doLogin} className="login-form">
           <input type="text" placeholder="Username" value={loginName} onChange={(e) => setLoginName(e.target.value)} required />

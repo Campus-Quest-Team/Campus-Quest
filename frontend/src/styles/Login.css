@@ -1,11 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600&display=swap');
-
 /* General Layout */
 body, html {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'Bebas Neue', cursive;
+  font-family: 'Anuphan', sans-serif;
   background: linear-gradient(135deg, #EFBF04, #ceba6b);
   display: flex;
   justify-content: center;
@@ -24,17 +22,17 @@ body, html {
 /* White Card Container */
 #loginDiv {
   background-color: #fff;
-  padding: 50px;
+  padding: 60px;
   border-radius: 25px;
   box-shadow: 0 22px 34px rgba(0, 0, 0, 0.2);
-  max-width: 400px;
+  max-width: 500px;
   width: 100%;
   text-align: center;
 }
 
 /* Title and Subtitle */
 #inner-title {
-  font-size: 80px;
+  font-size: 65px;
   font-weight: bold;
   color: #EFBF04;
   margin-bottom: 10px;
