@@ -1,6 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600&display=swap');
+
+/* General Layout */
 body, html {
-  height: 100%;
   margin: 0;
+  padding: 0;
+  height: 100%;
   font-family: 'Bebas Neue', cursive;
   background: linear-gradient(135deg, #EFBF04, #ceba6b);
   display: flex;
@@ -8,75 +12,89 @@ body, html {
   align-items: center;
 }
 
-/* Fullscreen gradient background using flexbox */
+/* Page Wrapper */
 .login-page-wrapper {
-  height: 100vh;
   width: 100vw;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* White centered login container */
+/* White Card Container */
 #loginDiv {
-  background-color: white;
+  background-color: #fff;
   padding: 50px;
   border-radius: 25px;
   box-shadow: 0 22px 34px rgba(0, 0, 0, 0.2);
-  width: 100%;
   max-width: 400px;
+  width: 100%;
   text-align: center;
 }
 
-
+/* Title and Subtitle */
 #inner-title {
-  font-size: 85px;
+  font-size: 80px;
   font-weight: bold;
-  color: #EFBF04 ;
-  margin-bottom: 20px;
-  display: block;
+  color: #EFBF04;
+  margin-bottom: 10px;
 }
 
-label, input {
+.login-subtitle {
   font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  color: #555;
+  margin-bottom: 30px;
 }
 
+/* Form Fields */
 input[type="text"],
-input[type="password"] {
+input[type="password"],
+input[type="email"] {
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
   width: 90%;
   padding: 12px;
-  margin-top: 8px;
-  border-radius: 8px;
+  margin-bottom: 16px;
   border: 1px solid #ccc;
-  font-size: 25px;
+  border-radius: 8px;
 }
 
-input[type="submit"] {
+/* Buttons */
+input[type="submit"],
+.login-button {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: bold;
   background-color: #EFBF04;
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 8px;
   padding: 12px 24px;
-  font-size: 25px;
+  width: 90%;
   cursor: pointer;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 input[type="submit"]:hover {
-  background-color: #EFBF04;
+  background-color: #d6a903;
 }
 
+/* Redirect Button */
 #registerRedirect {
   background: none;
   border: none;
-  color: #EFBF04 ;
+  color: #EFBF04;
   font-weight: bold;
+  font-size: 16px;
   cursor: pointer;
-  font-size: 20px;
-  margin-top: 12px;
+  margin-top: 16px;
 }
 
-#loginResult {
+/* Error & Info Messages */
+#loginResult,
+#registerResult {
+  font-family: 'Poppins', sans-serif;
   color: red;
   margin-top: 12px;
   display: block;
