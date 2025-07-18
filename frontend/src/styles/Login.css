@@ -1,0 +1,83 @@
+body, html {
+  height: 100%;
+  margin: 0;
+  font-family: 'Bebas Neue', cursive;
+  background: linear-gradient(135deg, #EFBF04, #ceba6b);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Fullscreen gradient background using flexbox */
+.login-page-wrapper {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* White centered login container */
+#loginDiv {
+  background-color: white;
+  padding: 50px;
+  border-radius: 25px;
+  box-shadow: 0 22px 34px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+
+#inner-title {
+  font-size: 85px;
+  font-weight: bold;
+  color: #EFBF04 ;
+  margin-bottom: 20px;
+  display: block;
+}
+
+label, input {
+  font-family: 'Poppins', sans-serif;
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 90%;
+  padding: 12px;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 25px;
+}
+
+input[type="submit"] {
+  background-color: #EFBF04;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 25px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+input[type="submit"]:hover {
+  background-color: #EFBF04;
+}
+
+#registerRedirect {
+  background: none;
+  border: none;
+  color: #EFBF04 ;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 20px;
+  margin-top: 12px;
+}
+
+#loginResult {
+  color: red;
+  margin-top: 12px;
+  display: block;
+}
