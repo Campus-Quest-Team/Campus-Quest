@@ -21,14 +21,43 @@ function RegisterPage() {
   const [registerEmail, setRegisterEmail] = useState('');
   const navigate = useNavigate();
 
+  const [errors, setErrors] = useState({
+    username: false,
+    password: false,
+    firstName: false,
+    email: false,
+  });
+
+
   async function doRegister(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     setMessage('');
 
-    if (registerName.length < 2) return setMessage('Username must have 2+ characters');
-    if (registerPassword.length < 5) return setMessage('Password must have 5+ characters');
-    if (registerFName.length < 2) return setMessage('First name must have 2+ characters');
-    if (!registerEmail.includes('@') || !registerEmail.includes('.')) return setMessage('Invalid email format');
+    setErrors({
+      username: false,
+      password: false,
+      firstName: false,
+      email: false,
+    });
+
+
+    if (registerName.length < 2) {
+      setErrors(prev => ({ ...prev, username: true }));
+      return setMessage('Username must have 2+ characters');
+    }
+    if (registerPassword.length < 5) {
+      setErrors(prev => ({ ...prev, password: true }));
+      return setMessage('Password must have 5+ characters');
+    }
+    if (registerFName.length < 2) {
+      setErrors(prev => ({ ...prev, firstName: true }));
+      return setMessage('First name must have 2+ characters');
+    }
+    if (!registerEmail.includes('@') || !registerEmail.includes('.')) {
+      setErrors(prev => ({ ...prev, email: true }));
+      return setMessage('Invalid email format');
+    }
+
     if (BadWordsChecker(registerName) || BadWordsChecker(registerFName) || BadWordsChecker(registerLName))
       return setMessage("It's okay to spread positivity too, you know?");
 
@@ -79,11 +108,36 @@ function RegisterPage() {
         <span id="inner-title">New Account</span>
         <p className="login-subtitle">Join Campus Quest today!</p>
         <form onSubmit={doRegister} className="login-form">
-          <input type="text" placeholder="Username" onChange={(e) => setRegisterUsername(e.target.value)} required />
-          <input type="text" placeholder="First Name" onChange={(e) => setRegisterFName(e.target.value)} required />
-          <input type="text" placeholder="Last Name (optional)" onChange={(e) => setRegisterLName(e.target.value)} />
-          <input type="email" placeholder="Email" onChange={(e) => setRegisterEmail(e.target.value)} required />
-          <input type="password" value={registerPassword} placeholder="Password" onChange={(e) => setRegisterPassword(e.target.value)} required />
+          <input
+            type="text"
+            placeholder="Username"
+            className={errors.username ? 'input-error' : ''}
+            onChange={(e) => setRegisterUsername(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="First Name"
+            className={errors.firstName ? 'input-error' : ''}
+            onChange={(e) => setRegisterFName(e.target.value)}
+            required
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            className={errors.email ? 'input-error' : ''}
+            onChange={(e) => setRegisterEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className={errors.password ? 'input-error' : ''}
+            value={registerPassword}
+            onChange={(e) => setRegisterPassword(e.target.value)}
+            required
+          />
+
           <input type="submit" value="Register" className="login-button" />
         </form>
         <span id="registerResult">{message}</span>
