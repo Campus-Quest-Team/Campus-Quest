@@ -17,7 +17,7 @@ function RegisterPage() {
   const [registerName, setRegisterUsername] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerFName, setRegisterFName] = useState('');
-  const [registerLName, setRegisterLName] = useState('');
+  const [registerLName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const navigate = useNavigate();
 

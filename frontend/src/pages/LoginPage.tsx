@@ -1,16 +1,10 @@
 import React, { useState } from 'react';
-import { storeToken } from '../tokenStorage';
+import { storeLogin } from '../loginStorage';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import buildPath from '../components/Path';
 import '../styles/Login.css';
-
-interface UserPayload {
-  userId: number;
-  firstName: string;
-  lastName: string;
-  iat: number;
-}
+import type { LoginInfo, UserPayload } from '../types/APITypes';
 
 function LoginPage() {
   const [message, setMessage] = useState('');
@@ -18,10 +12,15 @@ function LoginPage() {
   const [loginPassword, setLoginPassword] = useState('');
   const navigate = useNavigate();
 
+
+
   async function doLogin(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
 
-    const credentials = { login: loginName, password: loginPassword };
+    const credentials = {
+      login: loginName.trim(),
+      password: loginPassword.trim(),
+    };
 
     try {
       const response = await fetch(buildPath('api/login'), {
@@ -30,35 +29,36 @@ function LoginPage() {
         body: JSON.stringify(credentials),
       });
 
-      const res = JSON.parse(await response.text());
+      const data = await response.json();
 
-      if (res.error) {
+      if (!response.ok || data.error || !data.accessToken) {
         setMessage('User/Password combination incorrect');
         return;
       }
 
-      const { accessToken } = res;
-      storeToken(res);
+      const decoded = jwtDecode<UserPayload>(data.accessToken);
 
-      const decoded = jwtDecode<UserPayload>(accessToken);
-      if (decoded.userId <= 0) {
-        setMessage('User/Password combination incorrect');
+      // Validate decoded userId as a 24-char MongoDB ObjectId
+      if (typeof decoded.userId !== 'string' || decoded.userId.length !== 24) {
+        setMessage('Invalid user ID');
         return;
       }
 
-      const user = {
-        firstName: decoded.firstName,
-        lastName: decoded.lastName,
-        id: decoded.userId,
+      // Save to local storage using storeLogin()
+      const loginInfo: LoginInfo = {
+        accessToken: data.accessToken,
+        userId: decoded.userId,
       };
-      localStorage.setItem('user_data', JSON.stringify(user));
+      storeLogin(loginInfo);
 
       setMessage('');
       window.location.href = '/dashboard';
-    } catch (error: unknown) {
-      alert(error instanceof Error ? error.toString() : 'An unknown error occurred.');
+    } catch (err) {
+      console.error('Login error:', err);
+      setMessage('Something went wrong. Please try again.');
     }
   }
+
 
   return (
     <div className="login-page-wrapper">

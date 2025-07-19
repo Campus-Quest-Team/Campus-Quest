@@ -97,3 +97,8 @@ export interface SidebarProps {
   loginInfo: LoginInfo;
   onProfileChange: (profile: ProfileData) => void;
 }
+
+export interface ProfileEditProps {
+  loginInfo: LoginInfo;
+  onClose: () => void;
+}
