@@ -142,6 +142,7 @@ router.post('/getProfile', validateJWTMiddleware, async (req, res, next) => {
             questCompleted: user.questCompleted,
             displayName: user.profile?.displayName,
             pfp: pfpUrl,
+            bio: user.profile?.bio,
             questPosts: postsWithUrls.sort((a, b) => new Date(b.timeStamp) - new Date(a.timeStamp))
         };
 
