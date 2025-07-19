@@ -87,4 +87,4 @@ router.post('/emailVerification', validateJWTMiddleware, async (req, res, next) 
     sendSuccessResponse(res, {error:''}, jwtToken, 200);
 });
 
-module.exports = { router: initializeRouter }; 
+module.exports = { router: initializeRouter };
