@@ -120,6 +120,7 @@ router.post('/getProfile', validateJWTMiddleware, async (req, res, next) => {
                     'profile.displayName': 1, 
                     'profile.PFP': 1, 
                     questPosts: 1,
+                    'profile.bio': 1,
                     _id: 0
                 } 
             }
