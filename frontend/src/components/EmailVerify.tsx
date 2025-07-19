@@ -45,7 +45,7 @@ function EmailVerify() {
 
         //send packet to /email-verification to validate JWT and update db entry
         try {
-            const response = await fetch(buildPath('api/email-verification'), {method:'POST', body:packetJSON, headers:{'Content-Type':'application/json'}});
+            const response = await fetch(buildPath('api/email/emailVerification'), {method:'POST', body:packetJSON, headers:{'Content-Type':'application/json'}});
 
             let result = JSON.parse(await response.text());
             if(!(result.error == '')) { //empty error = success

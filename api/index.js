@@ -26,7 +26,7 @@ const initializeAPI = (client) => {
     router.use('/', postRouter); // /submitPost, /likePost, /flagPost, /rotateQuest, /currentQuest, /uploadMedia, /getMedia
     router.use('/', friendRouter); // /addFriend, /removeFriend, /fetchFriends
     router.use('/', scoreboardRouter); // /fetchScoreboard
-    router.use('/', emailRouter); // /emailSend, /emailVerification
+    router.use('/email', emailRouter); // /email/emailSend, /email/emailVerification
     
     return router;
 };

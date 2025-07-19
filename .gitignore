@@ -1,0 +1,14 @@
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Environment
+.env
+
+# Test files
+apiTest*
+
+# Build files
+dist/
+build/

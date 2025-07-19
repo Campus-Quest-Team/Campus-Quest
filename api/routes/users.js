@@ -93,7 +93,14 @@ router.post('/register', async (req, res, next) => {
         const result = await db.collection('users').insertOne(newUser);
         const userId = result.insertedId;
 
-        sendResponse(res, { userId: userId, firstName: firstName, lastName: lastName, error: '' });
+        // Create JWT token for the newly registered user
+        const ret = token.createToken(firstName, lastName, userId);
+        ret.userId = userId;
+        ret.firstName = firstName;
+        ret.lastName = lastName;
+        ret.error = '';
+        
+        sendResponse(res, ret);
     } catch(e) {
         sendResponse(res, { userId: null, firstName: '', lastName: '', error: e.toString() });
     }
