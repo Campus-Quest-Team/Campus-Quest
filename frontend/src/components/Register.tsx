@@ -100,7 +100,7 @@ function Register() {
                 let userId = emailToken.userId;
                 let emailPacket = JSON.stringify({login:registerName, email:registerEmail, userId:userId, jwtToken:accessToken});
 
-                const emailSend = await fetch(buildPath('api/email-send'), {method:'POST', body:emailPacket, headers:{'Content-Type':'application/json'}});
+                const emailSend = await fetch(buildPath('api/email/emailSend'), {method:'POST', body:emailPacket, headers:{'Content-Type':'application/json'}});
                 let emailResponse = JSON.parse(await emailSend.text());
                 if(!(emailResponse.error == '')) {
                     setMessage(emailResponse.error);
