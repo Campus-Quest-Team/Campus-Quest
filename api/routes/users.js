@@ -120,6 +120,7 @@ router.post('/getProfile', validateJWTMiddleware, async (req, res, next) => {
                     'profile.displayName': 1, 
                     'profile.PFP': 1, 
                     questPosts: 1,
+                    'profile.bio': 1,
                     _id: 0
                 } 
             }
@@ -141,6 +142,7 @@ router.post('/getProfile', validateJWTMiddleware, async (req, res, next) => {
             questCompleted: user.questCompleted,
             displayName: user.profile?.displayName,
             pfp: pfpUrl,
+            bio: user.profile?.bio,
             questPosts: postsWithUrls.sort((a, b) => new Date(b.timeStamp) - new Date(a.timeStamp))
         };
 
