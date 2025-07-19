@@ -25,8 +25,12 @@
   text-align: center;
 }
 
-.profile-icon {
-  font-size: 50px;
+.profile-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: #ccc;
+  margin: 0 auto;
 }
 
 .quests-section,
@@ -46,6 +50,68 @@
   gap: 20px;
 }
 
+.leaderboard-entry {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  margin: 6px 0;
+  padding-left: 40px;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent);
+}
+
+.leaderboard-entry img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.leaderboard-quests {
+  font-weight: bold;
+  color: #EFBF04; /* your theme yellow */
+}
+
+.leaderboard-rank {
+  font-weight: 600;
+}
+
+.leaderboard-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.current-quest-section {
+  margin-top: 20px;
+  padding: 12px;
+  background: #fff8dc;
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.current-quest p {
+  margin: 4px 0;
+}
+
+
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-pfp {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+
 /* Post Cards */
 .post-card {
   background: white;
@@ -53,6 +119,111 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   padding: 10px;
 }
+
+.profile-picture-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+}
+
+.edit-icon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #efbf04;
+  border-radius: 50%;
+  padding: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  display: none;
+}
+
+.profile-picture-wrapper:hover .edit-icon {
+  display: block;
+}
+
+
+/* Profile Edit Modal */
+.edit-profile-modal {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+}
+
+/* Overlay */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Profile Picture with Hover */
+.editable-profile-pic {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.editable-profile-pic img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.pencil-overlay {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: #EFBF04;
+  color: white;
+  border-radius: 50%;
+  padding: 6px;
+  display: none;
+}
+
+.editable-profile-pic:hover .pencil-overlay {
+  display: block;
+}
+
+/* Editable Text with Icon */
+.editable-text {
+  margin: 16px 0;
+  font-size: 18px;
+  position: relative;
+  cursor: pointer;
+}
+
+.editable-text input,
+.editable-text textarea {
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.pencil-icon {
+  margin-left: 8px;
+  font-size: 16px;
+  color: #888;
+}
+
 
 .post-header {
   display: flex;
