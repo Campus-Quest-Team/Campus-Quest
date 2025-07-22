@@ -97,6 +97,8 @@ function RegisterPage() {
       if (emailData.error) return setMessage(emailData.error);
 
       setMessage('Account created! Check your email to verify your account. ✅');
+      alert('Registration successful!\nPlease check your email to verify your account.');
+
     } catch (err) {
       alert(String(err));
     }
