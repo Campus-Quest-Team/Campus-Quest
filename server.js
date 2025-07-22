@@ -26,4 +26,24 @@ app.use((req, res, next) =>
     next();
 });
 
+const cron = require('node-cron');
+const fetch = require('node-fetch');
+
+// === CRON SCHEDULE CONFIGURATION ===
+// Default: '0 0 * * *' = every day at 12:00 AM
+// For testing, you can change to e.g. '*/1 * * * *' (every minute)
+const ROTATE_QUEST_CRON_SCHEDULE = '0 0 * * *';
+const ROTATE_QUEST_ENDPOINT = 'http://localhost:5001/api/rotateQuest';
+
+// Set up the cron job to call rotateQuest
+cron.schedule(ROTATE_QUEST_CRON_SCHEDULE, async () => {
+    try {
+        const response = await fetch(ROTATE_QUEST_ENDPOINT, { method: 'POST' });
+        const data = await response.text();
+        console.log(`[CRON] rotateQuest called at ${new Date().toISOString()}:`, data);
+    } catch (err) {
+        console.error('[CRON] Error calling rotateQuest:', err);
+    }
+});
+
 app.listen(5001); //start Node + Express server on port 5000
