@@ -1,0 +1,21 @@
+#verifyDiv {
+  background-color: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 500px;
+  margin: 100px auto;
+  text-align: center;
+  font-family: 'Anuphan', 'Poppins', sans-serif;
+}
+
+#inner-title {
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+#verifyResult {
+  font-size: 1.1rem;
+  color: #555;
+}
