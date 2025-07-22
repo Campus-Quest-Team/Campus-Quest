@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { buildPath } from './Path';
 import { jwtDecode } from 'jwt-decode';
 import type { UserPayload } from '../types/APITypes';
+import buildPath from '../components/Path';
 
 
 function VerifyPage() {
@@ -33,9 +33,14 @@ function VerifyPage() {
                 setMessage('UserId and associated token do not match');
                 return;
             }
-        } catch (error: any) {
-            alert(error.toString());
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                alert(error.message);
+            } else {
+                alert(String(error));
+            }
         }
+
 
         //send packet to /email-verification to validate JWT and update db entry
         try {
@@ -48,9 +53,14 @@ function VerifyPage() {
             }
 
             setMessage('Your email has been verified!');
-        } catch (error: any) {
-            setMessage(error.toString());
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                alert(error.message);
+            } else {
+                alert(String(error));
+            }
         }
+
     };
 
     return (
