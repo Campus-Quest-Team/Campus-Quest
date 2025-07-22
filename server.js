@@ -26,6 +26,31 @@ app.use((req, res, next) =>
     next();
 });
 
+let server;
+if (require.main === module) {
+  server = app.listen(5001, () => {
+    console.log('Server is running on port 5001');
+  });
+}
+
+// Graceful shutdown
+const cleanup = () => {
+  client.close().then(() => {
+    console.log('MongoDB connection closed.');
+    if (server) {
+      server.close(() => {
+        console.log('Server closed.');
+        process.exit(0);
+      });
+    } else {
+      process.exit(0);
+    }
+  });
+};
+
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
+
 const cron = require('node-cron');
 const fetch = require('node-fetch');
 
@@ -46,4 +71,4 @@ cron.schedule(ROTATE_QUEST_CRON_SCHEDULE, async () => {
     }
 });
 
-app.listen(5001); //start Node + Express server on port 5000
+module.exports = app;
