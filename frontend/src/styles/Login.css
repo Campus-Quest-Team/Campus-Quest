@@ -66,7 +66,7 @@ input[type="submit"]:hover {
 }
 
 /* Redirect Button */
-#registerRedirect {
+#registerRedirect, #forgot-link {
   background: none;
   border: none;
   color: #EFBF04;
