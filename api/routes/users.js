@@ -5,9 +5,11 @@ const token = require('../../createJWT.js');
 const { sendResponse, sendErrorResponse, sendSuccessResponse } = require('../utils/response');
 const { validateJWTMiddleware } = require('../middleware/auth');
 const { r2Client, getPresignedUrl, uploadPFPToR2, DeleteObjectCommand } = require('../utils/r2');
+const { Resend } = require('resend');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Database helper - will be set when router is initialized
 let getDatabase;
@@ -127,6 +129,7 @@ router.post('/getProfile', validateJWTMiddleware, async (req, res, next) => {
                     'profile.displayName': 1, 
                     'profile.PFP': 1, 
                     questPosts: 1,
+                    'profile.bio': 1,
                     _id: 0
                 } 
             }
@@ -148,6 +151,7 @@ router.post('/getProfile', validateJWTMiddleware, async (req, res, next) => {
             questCompleted: user.questCompleted,
             displayName: user.profile?.displayName,
             pfp: pfpUrl,
+            bio: user.profile?.bio,
             questPosts: postsWithUrls.sort((a, b) => new Date(b.timeStamp) - new Date(a.timeStamp))
         };
 
@@ -405,5 +409,136 @@ router.post('/deleteUser', validateJWTMiddleware, async (req, res, next) => {
         sendErrorResponse(res, e.toString(), jwtToken, 500);
     }
 });
+
+router.post('/forgot-password', async (req, res, next) => {
+    // incoming: email
+    // outgoing: success, message, error
+
+    const { email } = req.body;
+
+    if (!email) {
+        return sendErrorResponse(res, 'Email is required', null, 400);
+    }
+
+    try {
+        const db = getDatabase();
+
+        // Find user by email
+        const user = await db.collection('users').findOne({ email: email });
+
+        if (!user) {
+            // For security, don't reveal if email exists or not
+            return sendSuccessResponse(res, { 
+                success: true, 
+                message: 'If an account with that email exists, a password reset link has been sent.' 
+            });
+        }
+
+        // Generate password reset token
+        const resetToken = token.createToken(user.firstName, user.lastName, user._id);
+        const resetTokenString = resetToken.accessToken;
+
+        // Store reset token in database with one hour expiration
+        const resetTokenExpiry = new Date(Date.now() + 3600000);
+        
+        await db.collection('users').updateOne(
+            { _id: user._id },
+            { 
+                $set: { 
+                    passwordResetToken: resetTokenString,
+                    passwordResetExpiry: resetTokenExpiry
+                }
+            }
+        );
+
+        // Send password reset email
+        try {
+            const resetLink = `http://supercoolfun.site/reset-password?token=${resetTokenString}`;
+            
+            const emailBody = `
+                <h1>Password Reset Request for Campus Quest</h1>
+                <p>Hello ${user.login},</p>
+                <p>We received a request to reset your password for your Campus Quest account.</p>
+                <p>Click the button below to reset your password:</p>
+                <button style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+                    <a href="${resetLink}" style="color: white; text-decoration: none;"><strong>Reset My Password</strong></a>
+                </button>
+                <p>This link will expire in 1 hour for security purposes.</p>
+                <p>If you didn't request this password reset, please ignore this email.</p>
+                <p>Best regards,<br>The Campus Quest Team</p>
+            `;
+
+            await resend.emails.send(
+                {
+                    from: 'Campus Quest Team <no-reply@supercoolfun.site>',
+                    to: email,
+                    subject: 'Reset Your Campus Quest Password',
+                    html: emailBody,
+                },
+                {
+                    idempotencyKey: resetTokenString,
+                }
+            );
+        } catch (emailError) {
+            console.log('Email sending failed:', emailError.toString());
+            // Don't fail the request if email fails, just log it
+        }
+
+        sendSuccessResponse(res, { 
+            success: true, 
+            message: 'If an account with that email exists, a password reset link has been sent.'
+        });
+
+    } catch(e) {
+        console.log('Forgot password error:', e.toString());
+        sendErrorResponse(res, e.toString(), null, 500);
+    }
+});
+
+router.post('/reset-password', async (req, res, next) => {
+    // incoming: resetToken, newPassword
+    // outgoing: success, message, error
+
+    const { resetToken, newPassword } = req.body;
+
+    if (!resetToken || !newPassword) {
+        return sendErrorResponse(res, 'Reset token and new password are required', null, 400);
+    }
+
+    try {
+        const db = getDatabase();
+
+        // Find user with valid reset token
+        const user = await db.collection('users').findOne({
+            passwordResetToken: resetToken,
+            passwordResetExpiry: { $gt: new Date() }
+        });
+
+        if (!user) {
+            return sendErrorResponse(res, 'Invalid or expired reset token', null, 400);
+        }
+
+        // Update password and clear reset token
+        await db.collection('users').updateOne(
+            { _id: user._id },
+            { 
+                $set: { password: newPassword },
+                $unset: { 
+                    passwordResetToken: "",
+                    passwordResetExpiry: ""
+                }
+            }
+        );
+
+        sendSuccessResponse(res, { 
+            success: true, 
+            message: 'Password has been reset successfully' 
+        });
+
+    } catch(e) {
+        console.log('Reset password error:', e.toString());
+        sendErrorResponse(res, e.toString(), null, 500);
+    }
+})
 
 module.exports = { router: initializeRouter }; 

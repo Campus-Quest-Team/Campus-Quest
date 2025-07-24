@@ -4,7 +4,7 @@
     "description": "",
     "main": "server.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "jest",
         "start": "nodemon server.js"
     },
     "author": "",
@@ -19,7 +19,14 @@
         "jsonwebtoken": "^9.0.2",
         "mongodb": "^6.17.0",
         "multer": "^2.0.1",
+        "node-cron": "^4.2.1",
+        "node-fetch": "^2.7.0",
+        "nodemon": "^3.1.10",
         "react": "^19.1.0",
         "resend": "^4.6.0"
+    },
+    "devDependencies": {
+        "jest": "^30.0.5",
+        "supertest": "^7.1.3"
     }
 }
