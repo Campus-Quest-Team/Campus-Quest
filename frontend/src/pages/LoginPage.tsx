@@ -5,12 +5,15 @@ import { useNavigate } from 'react-router-dom';
 import buildPath from '../components/Path';
 import '../styles/Login.css';
 import type { LoginInfo, UserPayload } from '../types/APITypes';
+import ForgotPasswordPopup from '../components/login/ForgotPasswordPopup';
 
 function LoginPage() {
   const [message, setMessage] = useState('');
   const [loginName, setLoginName] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const navigate = useNavigate();
+  const [showForgotPopup, setShowForgotPopup] = useState(false);
+
 
 
 
@@ -71,9 +74,16 @@ function LoginPage() {
           <input type="submit" value="Login" className="login-button" />
         </form>
         <span id="loginResult">{message}</span>
-        <button id="registerRedirect" onClick={() => navigate('/register')}>
-          Create a new account
-        </button>
+        <div className="button-row">
+          <button id="registerRedirect" onClick={() => navigate('/register')}>
+            Create a new account
+          </button>
+          <button id="forgot-link" onClick={() => setShowForgotPopup(true)}>
+            Forgot password?
+          </button>
+        </div>
+
+        {showForgotPopup && <ForgotPasswordPopup onClose={() => setShowForgotPopup(false)} />}
       </div>
     </div>
   );
