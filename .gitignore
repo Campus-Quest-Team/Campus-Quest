@@ -1,14 +1,3 @@
-
-# Dependencies
-node_modules/
-frontend/node_modules/
-
-# Environment
+frontend/node_modules
+node_modules
 .env
-
-# Test files
-apiTest*
-
-# Build files
-dist/
-build/
