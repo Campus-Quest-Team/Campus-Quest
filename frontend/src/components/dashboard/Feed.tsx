@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import buildPath from "../Path";
 import type { FeedPost, FeedResponse } from "../../types/dashboardTypes";
 import type { LoginInfo } from "../../types/APITypes";
@@ -8,6 +9,7 @@ import { PostCard } from "../posts/PostCard";
 export function Feed(loginInfo: LoginInfo) {
     const [feed, setFeed] = useState<FeedPost[]>([]);
     const [hiddenPostIds, setHiddenPostIds] = useState<Set<string>>(new Set());
+    const navigate = useNavigate(); // ✅ import and use navigator
 
     const handleHidePost = (postId: string) => {
         setHiddenPostIds(prev => new Set(prev).add(postId));
@@ -23,15 +25,21 @@ export function Feed(loginInfo: LoginInfo) {
             body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
         })
             .then(res => res.json())
-            .then((data: FeedResponse) => {
-                if (data.feed) {
+            .then((data: FeedResponse | { error: string }) => {
+                if ('error' in data && data.error === "The JWT is no longer valid") {
+                    console.warn("JWT expired — redirecting to login");
+                    navigate('/login');
+                } else if ('feed' in data && data.feed) {
                     setFeed(data.feed);
                 } else {
                     console.error('Feed fetch failed or empty');
                 }
             })
-            .catch(console.error);
-    }, [loginInfo]);
+            .catch(err => {
+                console.error("Feed fetch error:", err);
+                navigate('/login'); // fallback for network or server errors
+            });
+    }, [loginInfo, navigate]);
 
     return (
         <div className="feed">
@@ -54,11 +62,10 @@ export function Feed(loginInfo: LoginInfo) {
                             pfp={post.creator.pfpUrl}
                             userId={loginInfo.userId}
                             jwtToken={loginInfo.accessToken}
-                            onHide={handleHidePost} // ✅ pass down hide handler
+                            onHide={handleHidePost}
                         />
                     ))
             )}
-
         </div>
     );
 }
