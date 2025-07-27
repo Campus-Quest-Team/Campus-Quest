@@ -88,6 +88,7 @@ export interface PostCardProps {
   user: string;
   title: string;
   imageUrl: string;
+  timeStamp: string;
   caption: string;
   likes: number;
   pfp: string;

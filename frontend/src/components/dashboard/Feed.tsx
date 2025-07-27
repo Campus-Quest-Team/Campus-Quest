@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import buildPath from "../Path";
-import type { FeedPost, FeedResponse, PostCardProps } from "../../types/dashboardTypes";
+import type { FeedPost, FeedResponse } from "../../types/dashboardTypes";
 import type { LoginInfo } from "../../types/APITypes";
 import '../../styles/Feed.css';
+import { PostCard } from "../posts/PostCard";
 
 export function Feed(loginInfo: LoginInfo) {
     const [feed, setFeed] = useState<FeedPost[]>([]);
@@ -38,44 +39,13 @@ export function Feed(loginInfo: LoginInfo) {
                         user={post.creator.displayName}
                         title={post.questDescription}
                         imageUrl={post.mediaUrl}
+                        timeStamp={post.timeStamp}
                         caption={post.caption}
                         likes={post.likes}
                         pfp={post.creator.pfpUrl}
                     />
                 ))
             )}
-        </div>
-    );
-}
-
-
-function PostCard({ user, title, imageUrl, caption, likes, pfp }: PostCardProps) {
-    const [expanded, setExpanded] = useState(false);
-
-    const toggleExpand = () => {
-        setExpanded(prev => !prev);
-    };
-
-    return (
-        <div className="post-card">
-            <div className="post-header">
-                <div className="post-left">
-                    <img src={pfp || 'default-profile.png'} alt={user} className="post-pfp" />
-                    <p className="post-user">{user}</p>
-                </div>
-                <div className="post-title-wrapper" onClick={toggleExpand}>
-                    <p className={`post-title ${expanded ? 'expanded' : ''}`}>
-                        {title}
-                    </p>
-                </div>
-            </div>
-
-            {imageUrl && <img src={imageUrl} alt={title} className="post-image" />}
-            <div className="post-footer">
-                {likes > 0 && <p>❤️ {likes}</p>}
-                <p>{caption}</p>
-                <button className="flag-btn">🚩</button>
-            </div>
         </div>
     );
 }
