@@ -78,20 +78,26 @@ export interface CurrentQuestResponse {
   currentQuest: {
     questId: string;
     timestamp: string;
-    questData: any; // refine this if you know its shape
+    questData: Record<string, unknown>;
+    questDescription: string;
+
   };
-  questDescription: string;
   timestamp: string;
 }
 
 export interface PostCardProps {
+  userId: string;
+  jwtToken: string;
+  postId: string;
   user: string;
   title: string;
   imageUrl: string;
   timeStamp: string;
   caption: string;
+  liked: boolean;
   likes: number;
   pfp: string;
+  onHide: (postId: string) => void;
 }
 
 export interface SidebarProps {
