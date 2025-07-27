@@ -26,4 +26,49 @@ app.use((req, res, next) =>
     next();
 });
 
-app.listen(5001); //start Node + Express server on port 5000
+let server;
+if (require.main === module) {
+  server = app.listen(5001, () => {
+    console.log('Server is running on port 5001');
+  });
+}
+
+// Graceful shutdown
+const cleanup = () => {
+  client.close().then(() => {
+    console.log('MongoDB connection closed.');
+    if (server) {
+      server.close(() => {
+        console.log('Server closed.');
+        process.exit(0);
+      });
+    } else {
+      process.exit(0);
+    }
+  });
+};
+
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
+
+const cron = require('node-cron');
+const fetch = require('node-fetch');
+
+// === CRON SCHEDULE CONFIGURATION ===
+// Default: '0 0 * * *' = every day at 12:00 AM
+// For testing, you can change to e.g. '*/1 * * * *' (every minute)
+const ROTATE_QUEST_CRON_SCHEDULE = '0 0 * * *';
+const ROTATE_QUEST_ENDPOINT = 'http://localhost:5001/api/rotateQuest';
+
+// Set up the cron job to call rotateQuest
+cron.schedule(ROTATE_QUEST_CRON_SCHEDULE, async () => {
+    try {
+        const response = await fetch(ROTATE_QUEST_ENDPOINT, { method: 'POST' });
+        const data = await response.text();
+        console.log(`[CRON] rotateQuest called at ${new Date().toISOString()}:`, data);
+    } catch (err) {
+        console.error('[CRON] Error calling rotateQuest:', err);
+    }
+});
+
+module.exports = app;
