@@ -11,98 +11,19 @@
   color: black;
 }
 
-
-
-
-
-/* Profile Edit Modal */
-.edit-profile-modal {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  width: 90%;
-  max-width: 400px;
-  text-align: center;
-}
-
-
-/* Overlay */
-.popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Profile Picture with Hover */
-.editable-profile-pic {
-  position: relative;
-  display: inline-block;
-  cursor: pointer;
-  margin-bottom: 20px;
-}
-
-.editable-profile-pic img {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.pencil-overlay {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: #EFBF04;
-  color: white;
-  border-radius: 50%;
-  padding: 6px;
-  display: none;
-}
-
-.editable-profile-pic:hover .pencil-overlay {
-  display: block;
-}
-
-/* Editable Text with Icon */
-.editable-text {
-  margin: 16px 0;
-  font-size: 18px;
-  position: relative;
-  cursor: pointer;
-}
-
-.editable-text input,
-.editable-text textarea {
-  width: 100%;
-  padding: 8px;
-  font-size: 16px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-.pencil-icon {
-  margin-left: 8px;
-  font-size: 16px;
-  color: #888;
-}
-
-
+/* Post Header */
 .post-header {
   display: flex;
   justify-content: space-between;
   font-weight: bold;
 }
 
+/* Post Title */
 .post-title {
   text-transform: uppercase;
 }
 
+/* Post Image */
 .post-image {
   width: 100%;
   height: auto;
@@ -110,12 +31,14 @@
   border-radius: 6px;
 }
 
+/* Post Footer */
 .post-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+/* Flag Button */
 .flag-btn {
   background: none;
   border: none;
@@ -123,10 +46,10 @@
   cursor: pointer;
 }
 
+/* Stats Grid */
 .stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  /* 3 columns */
   gap: 0px;
   margin-top: 20px;
 }
@@ -146,23 +69,10 @@
   color: #555;
 }
 
+/* Quests Section */
 .quests-section {
   background-color: grey;
   padding: 10px;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.logout-button {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background-color: #cc3333;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.logout-button:hover {
-  background-color: #aa2222;
 }
