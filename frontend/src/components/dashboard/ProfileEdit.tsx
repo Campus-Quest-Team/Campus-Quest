@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import buildPath from "../Path";
 import type { ProfileData, ProfileEditProps, ProfileResponse } from "../../types/dashboardTypes";
 import { useNavigate } from "react-router-dom";
+import { clearToken } from "../../loginStorage";
 
 export function ProfileEdit({ loginInfo, onClose }: ProfileEditProps) {
     const navigate = useNavigate();
@@ -39,6 +40,11 @@ export function ProfileEdit({ loginInfo, onClose }: ProfileEditProps) {
             });
         }
         // You can add more logic here if needed
+    };
+
+    const handleLogout = () => {
+        clearToken();
+        navigate('/login');
     };
 
     useEffect(() => {
@@ -116,7 +122,11 @@ export function ProfileEdit({ loginInfo, onClose }: ProfileEditProps) {
 
                 <button onClick={handleEditSubmit}>Save Changes</button>
                 <button onClick={onClose}>Cancel</button>
+
             </div>
+            <button className="logout-button" onClick={handleLogout}>
+                🚪 Logout
+            </button>
         </div>
     );
 }

@@ -1,0 +1,115 @@
+/* Sidebar */
+.sidebar {
+    width: 30%;
+    max-width: 300px;
+    background-color: #f3f3f3;
+    padding: 0 5px;
+    /* remove top/bottom padding */
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.profile-section {
+    text-align: center;
+}
+
+.profile-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #ccc;
+    margin: 0 auto;
+}
+
+.friends-section {
+    margin-top: 20px;
+}
+
+.leaderboard-entry {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    margin: 6px 0;
+    padding-left: 40px;
+    gap: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    mask-image: linear-gradient(to right, black 85%, transparent);
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent);
+}
+
+.leaderboard-entry img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.leaderboard-quests {
+    font-weight: bold;
+    color: #EFBF04;
+    /* your theme yellow */
+}
+
+.leaderboard-rank {
+    font-weight: 600;
+}
+
+.leaderboard-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.current-quest-section {
+    margin-top: 20px;
+    padding: 12px;
+    background: #fff8dc;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.current-quest p {
+    margin: 4px 0;
+}
+
+/* Sidebar */
+.profile-picture-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+}
+
+.edit-icon {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #efbf04;
+    border-radius: 50%;
+    padding: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: none;
+}
+
+.profile-picture-wrapper:hover .edit-icon {
+    display: block;
+}
+
+.campus-quest-logo {
+    width: 100%;
+}
+
+.logo-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 0px;
+    margin-right: 5px;
+    margin-left: 5px;
+}

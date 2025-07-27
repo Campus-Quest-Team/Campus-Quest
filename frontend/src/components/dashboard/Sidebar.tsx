@@ -4,8 +4,10 @@ import isToday from '../todayChecker';
 //types
 import type { FriendsResponse, LeaderboardResponse, CurrentQuestResponse, FriendData, LeaderboardEntry, ProfileData, ProfileResponse, SidebarProps } from '../../types/dashboardTypes';
 import buildPath from '../Path';
-import { clearToken } from '../../loginStorage';
 import { useNavigate } from 'react-router-dom';
+import fullLogo from '../../assets/full_logo.svg';
+import '../../styles/Sidebar.css';
+
 
 export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
     const navigate = useNavigate();
@@ -13,11 +15,6 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
     const [friends, setFriends] = useState<FriendData[]>([]);
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [currentQuest, setCurrentQuest] = useState<CurrentQuestResponse | null>(null);
-
-    const handleLogout = () => {
-        clearToken();
-        navigate('/login');
-    };
 
 
     useEffect(() => {
@@ -93,10 +90,15 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
             })
             .catch(console.error);
     }, []);
-    const questsToday = profile?.questPosts?.filter(post => isToday(post.timeStamp)).length ?? 0;
+    const questsToday = (profile?.questPosts || []).filter(
+        post => post?.timeStamp && isToday(post.timeStamp)
+    ).length;
+
     return (
         < div className="sidebar" >
-            <h2>Campus Quest</h2>
+            <div className="logo-wrapper">
+                <img src={fullLogo} alt="Campus Quest Logo" className="campus-quest-logo" />
+            </div>
             <div className="profile-section">
                 <div className="profile-picture-wrapper">
                     <img
@@ -173,11 +175,6 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                         ))
                 )}
             </div>
-
-
-            <button className="logout-button" onClick={handleLogout}>
-                🚪 Logout
-            </button>
 
         </div >
     );
