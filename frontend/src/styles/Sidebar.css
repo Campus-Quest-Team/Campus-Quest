@@ -6,7 +6,19 @@
     background-color: #f3f3f3;
     padding: 0 5px;
     box-sizing: border-box;
+    overflow-y: scroll;
     overflow-y: auto;
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+}
+
+.sidebar::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
 }
 
 /* Hide sidebar on small screens */

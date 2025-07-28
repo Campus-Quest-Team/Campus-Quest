@@ -162,7 +162,7 @@ export function PostCard({
                 <div className="post-header">
                     <div className="profile-menu-wrapper">
                         <div className="profile-clickable" onClick={() => setProfileMenuOpen(prev => !prev)}>
-                            <img src={pfp} alt="pfp" className="post-pfp" />
+                            <img src={pfp} alt="pfp" className="post-pfp" loading="lazy" />
                             <p className="post-user">{user}</p>
                         </div>
 
@@ -200,7 +200,7 @@ export function PostCard({
 
             <div className="post-image-wrapper">
                 {imageUrl ? (
-                    <img src={imageUrl} alt="post" className="post-image" />
+                    <img src={imageUrl} alt="post" className="post-image" loading="lazy" />
                 ) : (
                     <div className="post-image-placeholder">
                         <MdBrokenImage size={40} color="#aaa" />
