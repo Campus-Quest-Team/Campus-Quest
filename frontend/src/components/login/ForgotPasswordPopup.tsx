@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import buildPath from '../Path';
 import '../../styles/ForgotPassword.css';
 
-interface Props {
-    onClose: () => void;
-}
-
-function ForgotPasswordPopup({ onClose }: Props) {
+export default function ForgotPasswordPopup({ onClose }: { onClose: () => void; }) {
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
     const [submitted, setSubmitted] = useState(false);
@@ -62,5 +58,3 @@ function ForgotPasswordPopup({ onClose }: Props) {
         </div>
     );
 }
-
-export default ForgotPasswordPopup;
