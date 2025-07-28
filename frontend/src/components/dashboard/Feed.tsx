@@ -40,6 +40,7 @@ export function Feed(loginInfo: LoginInfo) {
                 if (handleJWTError(data, navigate)) return;
                 if ('feed' in data && data.feed) {
                     setFeed(data.feed);
+                    console.log("Feed fetched successfully:", data.feed);
                 } else {
                     console.error('Feed fetch failed or empty');
                     toast.warning("No posts available right now.");
@@ -48,6 +49,29 @@ export function Feed(loginInfo: LoginInfo) {
             .catch(err => {
                 console.error("Feed fetch error:", err);
                 toast.error("Failed to load feed. Please try again later.");
+                navigate('/login');
+            });
+
+        fetch(buildPath('api/fetchFriends'), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
+        })
+            .then(res => res.json())
+            .then((data: { friends: Friend[] } | { error: string }) => {
+                if (handleJWTError(data, navigate)) return;
+                if ('friends' in data && data.friends) {
+                    setFriends(data.friends);
+                } else {
+                    console.error('Friends fetch failed or empty');
+                    toast.warning("No friends found.");
+                }
+            })
+            .catch(err => {
+                console.error("Friends fetch error:", err);
+                toast.error("Failed to load friends. Please try again later.");
                 navigate('/login');
             });
     }, [loginInfo, navigate]);

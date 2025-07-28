@@ -15,7 +15,6 @@ import { toast } from 'react-toastify';
 import type {
     FriendsResponse,
     LeaderboardResponse,
-    CurrentQuestResponse,
     FriendData,
     LeaderboardEntry,
     ProfileData,
@@ -29,7 +28,6 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [friends, setFriends] = useState<FriendData[]>([]);
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-    const [currentQuest, setCurrentQuest] = useState<CurrentQuestResponse | null>(null);
     const [hasCompletedToday, setHasCompletedToday] = useState<boolean | null>(null);
 
     useEffect(() => {
@@ -76,15 +74,6 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                 if (handleJWTError(lbData, navigate)) return;
                 setLeaderboard(lbData.scoreboard);
 
-                // Current Quest
-                const questRes = await fetch(buildPath('api/currentQuest'), {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' },
-                });
-                const questData: CurrentQuestResponse = await questRes.json();
-                if (questData.success) setCurrentQuest(questData);
-                else console.error('Quest fetch failed');
-
                 // Has completed today's quest
                 const completionRes = await fetch(buildPath('api/hasCompletedCurrentQuest'), {
                     method: 'POST',
@@ -109,7 +98,7 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
         };
 
         fetchData();
-    }, []);
+    }, [loginInfo.accessToken, loginInfo.userId, navigate]);
 
 
     return (
@@ -174,13 +163,15 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                 ) : (
                     [...friends]
                         .sort((a, b) => b.questCompleted - a.questCompleted)
-                        .map((friend) => (
-                            <div key={friend.userId} className="friend-entry">
-                                <img src={friend.pfp} alt="pfp" className="friend-pfp" />
-                                <span>{friend.questCompleted} <MdTrackChanges size={12} /> {friend.displayName}</span>
+                        .map((friend, index) => (
+                            <div key={`${friend.displayName}-${index}`} className="friend-entry">
+                                <img src={friend.pfp} alt={`${friend.displayName}'s profile`} className="friend-pfp" />
+                                <span>
+                                    {friend.questCompleted} <MdTrackChanges size={12} /> {friend.displayName}
+                                </span>
                             </div>
-
                         ))
+
                 )}
             </div>
 

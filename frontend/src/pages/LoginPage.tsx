@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import buildPath from '../components/Path';
 import '../styles/Login.css';
 import type { LoginInfo, UserPayload } from '../types/APITypes';
-import ForgotPasswordPopup from '../components/login/ForgotPasswordPopup';
 import fullLogo from '../assets/full_logo.svg';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -17,6 +16,7 @@ function LoginPage() {
   const [loginPassword, setLoginPassword] = useState('');
   const navigate = useNavigate();
   const [showForgotPopup, setShowForgotPopup] = useState(false);
+  const ForgotPasswordPopup = React.lazy(() => import('../components/login/ForgotPasswordPopup'));
 
 
 
@@ -59,7 +59,7 @@ function LoginPage() {
 
       toast.success('Login successful!');
       setMessage('');
-      window.location.href = '/dashboard';
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       console.error('Login error:', err);
       toast.error('Something went wrong. Please try again.');
