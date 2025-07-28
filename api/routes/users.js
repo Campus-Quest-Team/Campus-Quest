@@ -101,7 +101,7 @@ router.post('/register', async (req, res, next) => {
         ret.firstName = firstName;
         ret.lastName = lastName;
         ret.error = '';
-        
+
         sendResponse(res, ret);
     } catch(e) {
         sendResponse(res, { userId: null, firstName: '', lastName: '', error: e.toString() });

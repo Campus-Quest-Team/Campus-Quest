@@ -9,7 +9,6 @@ import fullLogo from '../assets/full_logo.svg';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
 function LoginPage() {
   const [message, setMessage] = useState('');
   const [loginName, setLoginName] = useState('');
@@ -17,9 +16,6 @@ function LoginPage() {
   const navigate = useNavigate();
   const [showForgotPopup, setShowForgotPopup] = useState(false);
   const ForgotPasswordPopup = React.lazy(() => import('../components/login/ForgotPasswordPopup'));
-
-
-
 
   async function doLogin(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
