@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import isToday from '../todayChecker';
 import buildPath from '../Path';
 import { useNavigate } from 'react-router-dom';
 import fullLogo from '../../assets/full_logo.svg';
@@ -7,6 +6,7 @@ import { FaTrophy } from 'react-icons/fa';
 import { MdGroup } from 'react-icons/md';
 import { MdTrackChanges } from 'react-icons/md';
 import { MdCheckCircle, MdCancel } from 'react-icons/md';
+import { FaBinoculars } from 'react-icons/fa';
 import '../../styles/Sidebar.css';
 
 // types
@@ -27,6 +27,7 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
     const [friends, setFriends] = useState<FriendData[]>([]);
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [currentQuest, setCurrentQuest] = useState<CurrentQuestResponse | null>(null);
+    const [hasCompletedToday, setHasCompletedToday] = useState<boolean | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -80,6 +81,23 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                 const questData: CurrentQuestResponse = await questRes.json();
                 if (questData.success) setCurrentQuest(questData);
                 else console.error('Quest fetch failed');
+
+                // Has completed today's quest
+                const completionRes = await fetch(buildPath('api/hasCompletedCurrentQuest'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${loginInfo.accessToken}`,
+                    },
+                    body: JSON.stringify({
+                        userId: loginInfo.userId,
+                        jwtToken: loginInfo.accessToken,
+                    }),
+                });
+
+                const completionData = await completionRes.json();
+                setHasCompletedToday(completionData.hasCompleted);
+
             } catch (err) {
                 console.error(err);
                 navigate('/login');
@@ -89,9 +107,6 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
         fetchData();
     }, []);
 
-    const questsToday = (profile?.questPosts || []).filter(
-        post => post?.timeStamp && isToday(post.timeStamp)
-    ).length;
 
     return (
         <div className="sidebar">
@@ -111,8 +126,12 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                     <div
                         className="edit-icon"
                         onClick={() => profile && onProfileChange(profile)}
-                        style={{ cursor: profile ? 'pointer' : 'not-allowed', opacity: profile ? 1 : 0.5 }}
-                    >✏️</div>
+                        style={{ cursor: profile ? 'pointer' : 'not-allowed' }}
+                    >
+                        <FaBinoculars size={18} />
+                    </div>
+
+
                 </div>
 
                 <div className="stats">
@@ -125,13 +144,13 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                         <div className="stat-label">Quests Complete</div>
                     </div>
                     <div className="stat-item">
-                        <div className="stat-number">
-                            {questsToday === 0 ? (
-                                <MdCancel color="crimson" size={20} title="Incomplete" />
-                            ) : (
-                                <MdCheckCircle color="green" size={20} title="Complete" />
-                            )}
-                        </div>
+                        {hasCompletedToday === null ? (
+                            <span>⏳</span>
+                        ) : hasCompletedToday ? (
+                            <MdCheckCircle color="green" size={20} title="Complete" />
+                        ) : (
+                            <MdCancel color="crimson" size={20} title="Incomplete" />
+                        )}
                         <div className="stat-label">Today's Quest</div>
                     </div>
                 </div>

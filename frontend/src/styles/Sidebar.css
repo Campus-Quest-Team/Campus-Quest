@@ -1,30 +1,86 @@
-/* Sidebar */
+/* Sidebar container */
 .sidebar {
     width: 30%;
     max-width: 300px;
     background-color: #f3f3f3;
     padding: 0 5px;
-    /* remove top/bottom padding */
     box-sizing: border-box;
     flex-shrink: 0;
 }
 
+/* Profile section */
 .profile-section {
     text-align: center;
 }
 
-.profile-img {
+/* Logo */
+.logo-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 10px 5px 0 5px;
+}
+
+.campus-quest-logo {
+    width: 100%;
+}
+
+/* Profile image wrapper with hover overlay */
+.profile-picture-wrapper {
+    position: relative;
     width: 100px;
     height: 100px;
     border-radius: 50%;
-    background-color: #ccc;
+    overflow: hidden;
     margin: 0 auto;
 }
 
+.profile-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Hidden overlay with binoculars */
+.edit-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.4);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    font-size: 20px;
+}
+
+/* Reveal overlay and binoculars only on hover */
+.profile-picture-wrapper:hover .edit-icon {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+
+.profile-picture-wrapper:hover .edit-icon {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* Friends Section */
 .friends-section {
     margin-top: 20px;
 }
 
+/* Leaderboard */
 .leaderboard-entry {
     display: flex;
     align-items: center;
@@ -49,7 +105,6 @@
 .leaderboard-quests {
     font-weight: bold;
     color: #EFBF04;
-    /* your theme yellow */
 }
 
 .leaderboard-rank {
@@ -61,6 +116,7 @@
     color: #333;
 }
 
+/* Current Quest Styling */
 .current-quest-section {
     margin-top: 20px;
     padding: 12px;
@@ -71,45 +127,4 @@
 
 .current-quest p {
     margin: 4px 0;
-}
-
-/* Sidebar */
-.profile-picture-wrapper {
-    position: relative;
-    display: inline-block;
-}
-
-.profile-img {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-}
-
-.edit-icon {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    background: #efbf04;
-    border-radius: 50%;
-    padding: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    display: none;
-}
-
-.profile-picture-wrapper:hover .edit-icon {
-    display: block;
-}
-
-.campus-quest-logo {
-    width: 100%;
-}
-
-.logo-wrapper {
-    display: flex;
-    justify-content: center;
-    margin-top: 10px;
-    margin-bottom: 0px;
-    margin-right: 5px;
-    margin-left: 5px;
 }

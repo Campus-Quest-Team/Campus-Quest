@@ -3,12 +3,14 @@ import buildPath from "../Path";
 import type { ProfileData, ProfileEditProps, ProfileResponse } from "../../types/dashboardTypes";
 import { useNavigate } from "react-router-dom";
 import { clearToken } from "../../loginStorage";
-import '../../styles/ProfileEdit.css';
+import { FiCamera, FiEdit3, FiBell } from "react-icons/fi";
+import '../../styles/Settings.css';
 
-export function ProfileEdit({ loginInfo, onClose }: ProfileEditProps) {
+export function Settings({ loginInfo, onClose }: ProfileEditProps) {
     const navigate = useNavigate();
     const [bio, setBio] = useState('');
     const [displayName, setDisplayName] = useState('');
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
     const [isEditingName, setIsEditingName] = useState(false);
     const [isEditingBio, setIsEditingBio] = useState(false);
@@ -17,12 +19,10 @@ export function ProfileEdit({ loginInfo, onClose }: ProfileEditProps) {
     const [file] = useState<File | null>(null);
     const [profile, setProfile] = useState<ProfileData | null>(null);
 
-
     function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (file) {
             setPfpPreview(URL.createObjectURL(file));
-            // Optionally upload the image here
         }
     }
 
@@ -40,7 +40,30 @@ export function ProfileEdit({ loginInfo, onClose }: ProfileEditProps) {
                 body: formData,
             });
         }
-        // You can add more logic here if needed
+    };
+
+    const handleToggleNotifications = async () => {
+        const payload = {
+            userId: loginInfo.userId,
+            jwtToken: loginInfo.accessToken,
+        };
+
+        try {
+            const res = await fetch(buildPath('api/toggleNotifications'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                setNotificationsEnabled(data.notifications);
+            }
+        } catch (err) {
+            console.error("Toggle notification error:", err);
+        }
     };
 
     const handleLogout = () => {
@@ -49,36 +72,38 @@ export function ProfileEdit({ loginInfo, onClose }: ProfileEditProps) {
     };
 
     useEffect(() => {
-        // Fetch profile data
+        const payload = {
+            userId: loginInfo.userId,
+            jwtToken: loginInfo.accessToken,
+        };
+
         fetch(buildPath('api/getProfile'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${loginInfo.accessToken}`,
             },
-            body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
+            body: JSON.stringify(payload),
         })
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch profile');
-                return res.json();
-            })
-            .then((data: ProfileResponse) => {
+            .then(async res => {
+                const data: ProfileResponse = await res.json();
+
+                if (!res.ok) throw new Error('Profile fetch failed');
+
                 setProfile(data.profileData);
+                setBio(data.profileData.bio || '');
+                setDisplayName(data.profileData.displayName || '');
             })
-            .catch(err => {
-                console.error(err);
+            .catch(() => {
                 navigate('/login');
             });
     }, [loginInfo]);
 
     return (
-
-        <div className="popup-overlay">
-            <div className="edit-profile-modal">
-                {/* Profile Picture with Pencil Icon */}
-                <div className="editable-profile-pic" onClick={() => fileInputRef.current?.click()}>
+        <div className="settings-popup-container">
+            <div className="settings-sidebar-panel">
+                <div className="settings-editable-avatar" onClick={() => fileInputRef.current?.click()}>
                     <img src={pfpPreview || profile?.pfp || 'default-profile.png'} alt="Profile" />
-                    <div className="pencil-overlay">✏️</div>
+                    <div className="settings-avatar-overlay-icon"><FiCamera /></div>
                     <input
                         type="file"
                         accept="image/*"
@@ -88,8 +113,7 @@ export function ProfileEdit({ loginInfo, onClose }: ProfileEditProps) {
                     />
                 </div>
 
-                {/* Display Name */}
-                <div className="editable-text">
+                <div className="settings-editable-field editable-hover">
                     {isEditingName ? (
                         <input
                             type="text"
@@ -100,13 +124,12 @@ export function ProfileEdit({ loginInfo, onClose }: ProfileEditProps) {
                         />
                     ) : (
                         <span onClick={() => setIsEditingName(true)}>
-                            {displayName || 'Your Name'} <span className="pencil-icon">✏️</span>
+                            {displayName || 'Your Name'} <span className="settings-edit-icon"><FiEdit3 /></span>
                         </span>
                     )}
                 </div>
 
-                {/* Bio */}
-                <div className="editable-text">
+                <div className="settings-editable-field editable-hover">
                     {isEditingBio ? (
                         <textarea
                             value={bio}
@@ -116,20 +139,33 @@ export function ProfileEdit({ loginInfo, onClose }: ProfileEditProps) {
                         />
                     ) : (
                         <p onClick={() => setIsEditingBio(true)}>
-                            {bio || 'Your bio here...'} <span className="pencil-icon">✏️</span>
+                            {bio || 'Your bio here...'} <span className="settings-edit-icon"><FiEdit3 /></span>
                         </p>
                     )}
                 </div>
 
-                <div className="action-buttons">
+                <div className="settings-toggle-section">
+                    <label className="settings-toggle-label">
+                        <span className="settings-toggle-icon"><FiBell /></span>
+                        Notifications
+                    </label>
+                    <div
+                        className={`settings-toggle-switch ${notificationsEnabled ? 'on' : 'off'}`}
+                        onClick={handleToggleNotifications}
+                    >
+                        <div className="settings-toggle-knob" />
+                    </div>
+                </div>
+
+
+                <div className="settings-action-buttons">
                     <button onClick={onClose}>Cancel</button>
                     <button onClick={handleEditSubmit}>Save Changes</button>
                 </div>
-                <button className="logout-button" onClick={handleLogout}>
+                <button className="settings-logout-btn" onClick={handleLogout}>
                     🚪 Logout
                 </button>
             </div>
-
         </div>
     );
 }

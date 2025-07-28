@@ -4,8 +4,8 @@ import { isLoginValid, retrieveLogin } from "../loginStorage";
 import { useNavigate } from "react-router";
 
 import { DashboardSidebar } from "../components/dashboard/Sidebar";
-import { ProfileEdit } from "../components/dashboard/ProfileEdit";
 import { Feed } from "../components/dashboard/Feed";
+import { ProfileView } from "../components/dashboard/ProfileView";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ function Dashboard() {
       )}
       {loginInfo && <Feed {...loginInfo} />}
       {showEditPopup && (
-        <ProfileEdit
+        <ProfileView
           loginInfo={loginInfo}
           onClose={() => {
             setShowEditPopup(false);

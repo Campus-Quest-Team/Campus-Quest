@@ -36,12 +36,14 @@ export interface FeedResponse {
   jwtToken: string;
 }
 
-export interface ProfileData {
-  questCompleted: number;
+export type ProfileData = {
   displayName: string;
+  bio: string;
   pfp: string;
-  questPosts: QuestPost[];
-}
+  questPosts?: FeedPost[];
+  questCompleted: number;
+};
+
 
 export interface ProfileResponse {
   profileData: ProfileData;
