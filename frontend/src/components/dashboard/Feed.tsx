@@ -34,20 +34,20 @@ export function Feed(loginInfo: LoginInfo) {
     }, [feed.length]);
 
     useEffect(() => {
+        const el = observerRef.current;
         const observer = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting) {
                 loadMore();
             }
         });
 
-        if (observerRef.current) {
-            observer.observe(observerRef.current);
-        }
+        if (el) observer.observe(el);
 
         return () => {
-            if (observerRef.current) observer.unobserve(observerRef.current);
+            if (el) observer.unobserve(el);
         };
     }, [loadMore]);
+
 
     useEffect(() => {
         fetch(buildPath('api/getFeed'), {

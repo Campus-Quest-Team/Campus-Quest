@@ -20,7 +20,6 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [posts, setPosts] = useState<FeedPost[]>([]);
     const [visibleCount, setVisibleCount] = useState(POSTS_PER_BATCH);
-    const [isLoading, setIsLoading] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const navigate = useNavigate();
     const observerRef = useRef<HTMLDivElement | null>(null);
@@ -61,16 +60,17 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
 
 
     useEffect(() => {
+        const el = observerRef.current;
         const observer = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting) {
                 loadMore();
             }
         });
 
-        if (observerRef.current) observer.observe(observerRef.current);
+        if (el) observer.observe(el);
 
         return () => {
-            if (observerRef.current) observer.unobserve(observerRef.current);
+            if (el) observer.unobserve(el);
         };
     }, [loadMore]);
 
@@ -104,7 +104,6 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
                     flagged: qp.flagged,
                     flaggedBy: qp.flaggedBy,
                 })));
-                setIsLoading(false);
             })
             .catch(err => {
                 console.error('Profile fetch error:', err);
