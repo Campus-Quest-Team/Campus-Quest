@@ -104,7 +104,7 @@ export interface PostCardProps {
 
 export interface SidebarProps {
   loginInfo: LoginInfo;
-  onProfileChange: (profile: ProfileData) => void;
+  onProfileChange: () => void;
 }
 
 export interface ProfileEditProps {

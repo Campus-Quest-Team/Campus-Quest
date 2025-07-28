@@ -25,7 +25,7 @@ function Dashboard() {
       {loginInfo && (
         <DashboardSidebar
           loginInfo={loginInfo}
-          onProfileChange={(_profile) => {
+          onProfileChange={() => {
             setShowEditPopup(true);
           }}
         />

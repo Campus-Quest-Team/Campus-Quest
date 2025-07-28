@@ -137,7 +137,7 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
                 navigate('/login');
                 toast.error("Session expired. Please log in again.");
             });
-    }, [loginInfo]);
+    }, [loginInfo, navigate]);
 
     return (
         <div className="settings-popup-container">
