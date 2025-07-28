@@ -4,6 +4,11 @@ import {
     MdFavoriteBorder,
     MdMoreVert,
     MdBrokenImage,
+    MdEdit,
+    MdDelete,
+    MdVisibilityOff,
+    MdFlag,
+
 } from "react-icons/md";
 import '../../styles/PostCard.css';
 import type { PostCardProps } from "../../types/dashboardTypes";
@@ -21,8 +26,9 @@ export function PostCard({
     userId,
     jwtToken,
     postId,
-    onHide, // Default to a no-op if not provided
-}: PostCardProps) {
+    onHide,
+    isProfileView = false,
+}: PostCardProps & { isProfileView?: boolean }) {
     const [likedState, setLikedState] = useState(liked);
     const [likeCount, setLikeCount] = useState(likes);
     const [menuOpen, setMenuOpen] = useState(false);
@@ -57,7 +63,6 @@ export function PostCard({
             if (res.ok && data.success) {
                 setLikedState(data.liked);
                 setLikeCount(data.likeCount);
-                // Optionally update jwtToken if needed: data.jwtToken
             } else {
                 console.error("Failed to like/unlike post:", data);
             }
@@ -95,39 +100,97 @@ export function PostCard({
         }
     };
 
+    const handleDelete = async () => {
+        try {
+            const res = await fetch(buildPath("api/deletePost"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId, postId, jwtToken }),
+            });
+            const data = await res.json();
+            if (res.ok && data.success) onHide(postId);
+        } catch (err) {
+            console.error("Delete post error:", err);
+        } finally {
+            setMenuOpen(false);
+        }
+    };
+
+    const handleEditCaption = async () => {
+        const newCaption = prompt("Enter new caption:", caption);
+        if (newCaption !== null) {
+            try {
+                const res = await fetch(buildPath("api/editCaption"), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId, postId, caption: newCaption, jwtToken }),
+                });
+                const data = await res.json();
+                if (res.ok && data.success) window.location.reload();
+            } catch (err) {
+                console.error("Edit caption error:", err);
+            }
+        }
+    };
 
     return (
         <div className="post-card">
             {/* Header */}
-            <div className="post-header">
-                <img src={pfp} alt="pfp" className="post-pfp" />
-                <p className="post-user">{user}</p>
-                <div className="post-more-wrapper">
-                    <button className="post-more" onClick={() => setMenuOpen(prev => !prev)}>
-                        <MdMoreVert size={22} color="#666" />
-                    </button>
-                    {menuOpen && (
-                        <div className="more-menu">
-                            <button onClick={() => onHide(postId)}>🙈 Hide Post</button>
-                            <button onClick={handleFlag}>🚩 Flag Post</button>
-                        </div>
-                    )}
-
-                </div>
-            </div>
-
-
-            {/* Image */}
-            {imageUrl ? (
-                <div className="post-image-wrapper">
-                    <img src={imageUrl} alt="post" className="post-image" />
-                </div>
-            ) : (
-                <div className="post-image-placeholder">
-                    <MdBrokenImage size={40} color="#aaa" />
-                    <span>Image Not Available</span>
+            {!isProfileView && (
+                <div className="post-header">
+                    <img src={pfp} alt="pfp" className="post-pfp" />
+                    <p className="post-user">{user}</p>
+                    <div className="post-more-wrapper">
+                        <button className="post-more" onClick={() => setMenuOpen(prev => !prev)}>
+                            <MdMoreVert size={22} color="#666" />
+                        </button>
+                        {menuOpen && (
+                            <div className="more-menu">
+                                <button onClick={() => onHide(postId)}>
+                                    <span style={{ marginRight: 6 }}><MdVisibilityOff /></span>
+                                    Hide Post
+                                </button>
+                                <button onClick={handleFlag}>
+                                    <span style={{ marginRight: 6 }}><MdFlag /></span>
+                                    Flag Post
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
+
+            {/* Image */}
+            <div className="post-image-wrapper">
+                {imageUrl ? (
+                    <img src={imageUrl} alt="post" className="post-image" />
+                ) : (
+                    <div className="post-image-placeholder">
+                        <MdBrokenImage size={40} color="#aaa" />
+                        <span>Image Not Available</span>
+                    </div>
+                )}
+                {isProfileView && (
+                    <div className="post-image-overlay">
+                        <button className="post-more" onClick={() => setMenuOpen(prev => !prev)}>
+                            <MdMoreVert size={22} color="#000" />
+                        </button>
+                        {menuOpen && (
+                            <div className="more-menu">
+                                <button onClick={handleEditCaption}>
+                                    <span style={{ marginRight: 6 }}><MdEdit /></span>
+                                    Edit
+                                </button>
+                                <button onClick={handleDelete}>
+                                    <span style={{ marginRight: 6 }}><MdDelete /></span>
+                                    Delete
+                                </button>
+
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
 
             {/* Interactions */}
             <div className="post-interaction">

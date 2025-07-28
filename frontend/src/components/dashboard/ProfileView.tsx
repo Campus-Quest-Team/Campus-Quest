@@ -130,6 +130,7 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
                                                         prev.filter(p => p.postId !== post.postId)
                                                     )
                                                 }
+                                                isProfileView={true}
                                             />
                                         ))}
                                     </div>
