@@ -60,3 +60,16 @@ html, body, #root {
   width: 100%;
   overflow: hidden; /* prevents scrollbars */
 }
+
+.button-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.button-row button {
+  flex: 1;
+  padding: 10px;
+}
