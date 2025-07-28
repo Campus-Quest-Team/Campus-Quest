@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import buildPath from '../Path';
 import { PostCard } from '../posts/PostCard';
 import { FiSettings } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 import type {
     FeedPost,
     ProfileData,
@@ -10,12 +12,14 @@ import type {
 } from '../../types/dashboardTypes';
 import '../../styles/ProfileView.css';
 import { Settings } from './Settings';
+import { handleJWTError } from '../handleJWTError';
 
 export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [posts, setPosts] = useState<FeedPost[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetch(buildPath('api/getProfile'), {
@@ -30,9 +34,12 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
             }),
         })
             .then(res => res.json())
-            .then((data: ProfileResponse) => {
-                setProfile(data.profileData);
-                setPosts((data.profileData.questPosts || []).map(qp => ({
+            .then((data: ProfileResponse | { error: string }) => {
+                if (handleJWTError(data, navigate)) return;
+
+                const profileData = (data as ProfileResponse).profileData;
+                setProfile(profileData);
+                setPosts((profileData.questPosts || []).map(qp => ({
                     postId: qp.postId,
                     creator: qp.creator ?? {
                         userId: '',
@@ -52,8 +59,9 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
             })
             .catch(err => {
                 console.error('Profile fetch error:', err);
+                toast.error("Server error while loading profile.");
             });
-    }, [loginInfo]);
+    }, [loginInfo, navigate]);
 
     const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
@@ -139,5 +147,4 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
             </div>
         </div>
     );
-
 }

@@ -8,6 +8,8 @@ import { MdTrackChanges } from 'react-icons/md';
 import { MdCheckCircle, MdCancel } from 'react-icons/md';
 import { FaBinoculars } from 'react-icons/fa';
 import '../../styles/Sidebar.css';
+import { toast } from 'react-toastify';
+
 
 // types
 import type {
@@ -20,6 +22,7 @@ import type {
     ProfileResponse,
     SidebarProps
 } from '../../types/dashboardTypes';
+import { handleJWTError } from '../handleJWTError';
 
 export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
     const navigate = useNavigate();
@@ -42,8 +45,8 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                     body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
                 });
 
-                if (!profileRes.ok) throw new Error('Failed to fetch profile');
                 const profileData: ProfileResponse = await profileRes.json();
+                if (handleJWTError(profileData, navigate)) return;
                 setProfile(profileData.profileData);
 
                 // Friends
@@ -51,12 +54,12 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${loginInfo.accessToken}`,
                     },
                     body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
                 });
 
                 const friendsData: FriendsResponse = await friendsRes.json();
+                if (handleJWTError(friendsData, navigate)) return;
                 setFriends(friendsData.friends);
 
                 // Leaderboard
@@ -70,6 +73,7 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                 });
 
                 const lbData: LeaderboardResponse = await lbRes.json();
+                if (handleJWTError(lbData, navigate)) return;
                 setLeaderboard(lbData.scoreboard);
 
                 // Current Quest
@@ -77,7 +81,6 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' },
                 });
-
                 const questData: CurrentQuestResponse = await questRes.json();
                 if (questData.success) setCurrentQuest(questData);
                 else console.error('Quest fetch failed');
@@ -87,7 +90,6 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${loginInfo.accessToken}`,
                     },
                     body: JSON.stringify({
                         userId: loginInfo.userId,
@@ -96,16 +98,20 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                 });
 
                 const completionData = await completionRes.json();
+                if (handleJWTError(completionData, navigate)) return;
                 setHasCompletedToday(completionData.hasCompleted);
 
             } catch (err) {
                 console.error(err);
+                toast.error("Network error. Redirecting to login.");
                 navigate('/login');
             }
         };
 
         fetchData();
     }, []);
+
+
 
 
     return (

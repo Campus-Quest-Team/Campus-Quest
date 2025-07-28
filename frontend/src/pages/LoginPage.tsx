@@ -7,6 +7,9 @@ import '../styles/Login.css';
 import type { LoginInfo, UserPayload } from '../types/APITypes';
 import ForgotPasswordPopup from '../components/login/ForgotPasswordPopup';
 import fullLogo from '../assets/full_logo.svg';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 function LoginPage() {
   const [message, setMessage] = useState('');
@@ -36,32 +39,34 @@ function LoginPage() {
       const data = await response.json();
 
       if (!response.ok || data.error || !data.accessToken) {
+        toast.error('User/Password combination incorrect');
         setMessage('User/Password combination incorrect');
         return;
       }
 
       const decoded = jwtDecode<UserPayload>(data.accessToken);
-
-      // Validate decoded userId as a 24-char MongoDB ObjectId
       if (typeof decoded.userId !== 'string' || decoded.userId.length !== 24) {
+        toast.error('Invalid user ID');
         setMessage('Invalid user ID');
         return;
       }
 
-      // Save to local storage using storeLogin()
       const loginInfo: LoginInfo = {
         accessToken: data.accessToken,
         userId: decoded.userId,
       };
       storeLogin(loginInfo);
 
+      toast.success('Login successful!');
       setMessage('');
       window.location.href = '/dashboard';
     } catch (err) {
       console.error('Login error:', err);
+      toast.error('Something went wrong. Please try again.');
       setMessage('Something went wrong. Please try again.');
     }
   }
+
 
 
   return (

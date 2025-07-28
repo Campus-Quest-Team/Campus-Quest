@@ -4,6 +4,7 @@ import type { ProfileData, ProfileEditProps, ProfileResponse } from "../../types
 import { useNavigate } from "react-router-dom";
 import { clearToken } from "../../loginStorage";
 import { FiCamera, FiEdit3, FiBell } from "react-icons/fi";
+import { toast } from "react-toastify";
 import '../../styles/Settings.css';
 
 export function Settings({ loginInfo, onClose }: ProfileEditProps) {
@@ -16,29 +17,64 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [pfpPreview, setPfpPreview] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [file] = useState<File | null>(null);
+    const [file, setFile] = useState<File | null>(null);
     const [profile, setProfile] = useState<ProfileData | null>(null);
 
     function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        if (file) {
-            setPfpPreview(URL.createObjectURL(file));
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            setFile(selectedFile);
+            setPfpPreview(URL.createObjectURL(selectedFile));
         }
     }
 
     const handleEditSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Save display name and bio
+        try {
+            const res = await fetch(buildPath('api/editProfile'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: loginInfo.userId,
+                    displayName,
+                    bio,
+                    jwtToken: loginInfo.accessToken,
+                }),
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                toast.success("Profile details updated successfully!");
+            } else {
+                toast.error("Failed to update profile details.");
+            }
+        } catch {
+            toast.error("Server error while updating profile.");
+        }
+
+        // Save profile picture if selected
         if (file) {
             const formData = new FormData();
             formData.append('userId', loginInfo.userId);
             formData.append('file', file);
             formData.append('jwtToken', loginInfo.accessToken);
 
-            await fetch(buildPath('api/editPFP'), {
-                method: 'POST',
-                body: formData,
-            });
+            try {
+                const res = await fetch(buildPath('api/editPFP'), {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    toast.success("Profile picture updated successfully!");
+                } else {
+                    toast.error("Failed to update profile picture.");
+                }
+            } catch {
+                toast.error("Server error while uploading profile picture.");
+            }
         }
     };
 
@@ -60,15 +96,20 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
             const data = await res.json();
             if (data.success) {
                 setNotificationsEnabled(data.notifications);
+                toast.success(`Notifications turned ${data.notifications ? 'on' : 'off'}.`);
+            } else {
+                toast.error("Failed to toggle notifications.");
             }
         } catch (err) {
             console.error("Toggle notification error:", err);
+            toast.error("Server error while toggling notifications.");
         }
     };
 
     const handleLogout = () => {
         clearToken();
         navigate('/login');
+        toast.info("Logged out.");
     };
 
     useEffect(() => {
@@ -86,7 +127,6 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
         })
             .then(async res => {
                 const data: ProfileResponse = await res.json();
-
                 if (!res.ok) throw new Error('Profile fetch failed');
 
                 setProfile(data.profileData);
@@ -95,6 +135,7 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
             })
             .catch(() => {
                 navigate('/login');
+                toast.error("Session expired. Please log in again.");
             });
     }, [loginInfo]);
 
@@ -156,7 +197,6 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
                         <div className="settings-toggle-knob" />
                     </div>
                 </div>
-
 
                 <div className="settings-action-buttons">
                     <button onClick={onClose}>Cancel</button>

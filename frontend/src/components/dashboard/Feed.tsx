@@ -5,11 +5,13 @@ import type { FeedPost, FeedResponse } from "../../types/dashboardTypes";
 import type { LoginInfo } from "../../types/APITypes";
 import '../../styles/Feed.css';
 import { PostCard } from "../posts/PostCard";
+import { toast } from "react-toastify";
+import { handleJWTError } from "../handleJWTError";
 
 export function Feed(loginInfo: LoginInfo) {
     const [feed, setFeed] = useState<FeedPost[]>([]);
     const [hiddenPostIds, setHiddenPostIds] = useState<Set<string>>(new Set());
-    const navigate = useNavigate(); // ✅ import and use navigator
+    const navigate = useNavigate();
 
     const handleHidePost = (postId: string) => {
         setHiddenPostIds(prev => new Set(prev).add(postId));
@@ -20,24 +22,23 @@ export function Feed(loginInfo: LoginInfo) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${loginInfo.accessToken}`,
             },
             body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
         })
             .then(res => res.json())
             .then((data: FeedResponse | { error: string }) => {
-                if ('error' in data && data.error === "The JWT is no longer valid") {
-                    console.warn("JWT expired — redirecting to login");
-                    navigate('/login');
-                } else if ('feed' in data && data.feed) {
+                if (handleJWTError(data, navigate)) return;
+                if ('feed' in data && data.feed) {
                     setFeed(data.feed);
                 } else {
                     console.error('Feed fetch failed or empty');
+                    toast.warning("No posts available right now.");
                 }
             })
             .catch(err => {
                 console.error("Feed fetch error:", err);
-                navigate('/login'); // fallback for network or server errors
+                toast.error("Failed to load feed. Please try again later.");
+                navigate('/login');
             });
     }, [loginInfo, navigate]);
 
@@ -47,7 +48,10 @@ export function Feed(loginInfo: LoginInfo) {
                 <h2>No Posts Today :(</h2>
             ) : (
                 feed
-                    .filter(post => !hiddenPostIds.has(post.postId))
+                    .filter(post => {
+                        if (hiddenPostIds.has(post.postId)) return false;
+                        return !hiddenPostIds.has(post.postId);
+                    })
                     .map(post => (
                         <PostCard
                             key={post.postId}
