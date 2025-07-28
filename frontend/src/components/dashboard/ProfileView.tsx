@@ -159,9 +159,9 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
                                 </div>
                             ) : (
                                 <div className="profile-posts-container">
-                                    {visiblePosts.map(post => (
+                                    {visiblePosts.map((post, index) => (
                                         <PostCard
-                                            key={post.postId}
+                                            key={`${post.postId}-${index}`}
                                             postId={post.postId}
                                             caption={post.caption}
                                             title={post.questDescription}

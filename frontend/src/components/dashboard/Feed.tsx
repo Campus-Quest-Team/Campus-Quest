@@ -101,7 +101,7 @@ export function Feed(loginInfo: LoginInfo) {
                         const isFriend = friends.some(f => f.userId === post.creator.userId);
                         return (
                             <PostCard
-                                key={index}
+                                key={`${post.postId}-${index}`}
                                 postId={post.postId}
                                 user={post.creator.displayName}
                                 title={post.questDescription}
