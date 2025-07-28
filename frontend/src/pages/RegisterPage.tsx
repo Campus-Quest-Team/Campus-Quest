@@ -82,7 +82,7 @@ function RegisterPage() {
       const { accessToken } = data;
       const decoded = jwtDecode<UserPayload>(accessToken);
 
-      const emailRes = await fetch(buildPath('api/email-send'), {
+      const emailRes = await fetch(buildPath('api/email/emailSend'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
