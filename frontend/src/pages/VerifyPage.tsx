@@ -41,9 +41,9 @@ function VerifyPage() {
             return;
         }
 
-        // Send packet to /email-verification to validate JWT and update DB entry
+        // Send packet to /email/emailVerification to validate JWT and update DB entry
         try {
-            const response = await fetch(buildPath('api/email-verification'), {
+            const response = await fetch(buildPath('api/email/emailVerification'), {
                 method: 'POST',
                 body: packetJSON,
                 headers: { 'Content-Type': 'application/json' }

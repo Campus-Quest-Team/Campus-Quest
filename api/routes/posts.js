@@ -508,15 +508,51 @@ router.post('/getFeed', validateJWTMiddleware, async (req, res, next) => {
                     'questPosts.timeStamp': -1
                 }
             },
+            // Lookup the logins of users who liked the post
+            {
+                $lookup: {
+                    from: 'users',
+                    let: { liked_by_string_ids: { $ifNull: ['$questPosts.likedBy', []] } },
+                    pipeline: [
+                        { $match: {
+                            $expr: {
+                                $in: [
+                                    '$_id',
+                                    { $map: { input: '$$liked_by_string_ids', in: { $toObjectId: '$$this' } } }
+                                ]
+                            }
+                        } },
+                        { $project: { _id: 0, login: 1 } }
+                    ],
+                    as: 'likedByUsers'
+                }
+            },
             // Project the required fields
             {
                 $project: {
                     _id: 0,
-                    post: '$questPosts',
+                    post: { // Reconstruct the post object
+                        _id: '$questPosts._id',
+                        questId: '$questPosts.questId',
+                        userId: '$questPosts.userId',
+                        mediaPath: '$questPosts.mediaPath',
+                        caption: '$questPosts.caption',
+                        questDescription: '$questPosts.questDescription',
+                        likes: '$questPosts.likes',
+                        flagged: '$questPosts.flagged',
+                        timeStamp: '$questPosts.timeStamp',
+                        likedBy: '$questPosts.likedBy',
+                        flaggedBy: '$questPosts.flaggedBy',
+                        likedByLogins: '$likedByUsers.login' // Add the new field
+                    },
                     creator: {
                         userId: '$_id',
                         displayName: '$profile.displayName',
-                        pfpPath: '$profile.PFP'
+                        pfpPath: '$profile.PFP',
+                        // Check if the current user is in the creator's friends list
+                        isFriend: {
+                            $in: [new ObjectId(userId), { $ifNull: ['$friends', []] }]
+                        }
                     }
                 }
             }
@@ -532,6 +568,7 @@ router.post('/getFeed', validateJWTMiddleware, async (req, res, next) => {
             // Destructure to rename _id to postId and remove mediaPath and userId
             const { _id: postId, userId, mediaPath, ...restOfPost } = item.post;
 
+
             return {
                 postId: postId,
                 ...restOfPost,
@@ -539,7 +576,8 @@ router.post('/getFeed', validateJWTMiddleware, async (req, res, next) => {
                 creator: {
                     userId: item.creator.userId,
                     displayName: item.creator.displayName,
-                    pfpUrl: pfpUrl
+                    pfpUrl: pfpUrl,
+                    isFriend: item.creator.isFriend
                 }
             };
         }));
