@@ -100,6 +100,9 @@ export interface PostCardProps {
   likes: number;
   pfp: string;
   onHide: (postId: string) => void;
+  isProfileView?: boolean;
+  isFriend?: boolean;
+  friendId?: string;
 }
 
 export interface SidebarProps {

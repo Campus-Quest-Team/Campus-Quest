@@ -8,6 +8,14 @@ import { PostCard } from "../posts/PostCard";
 import { toast } from "react-toastify";
 import { handleJWTError } from "../handleJWTError";
 
+interface Friend {
+    userId: string;
+    displayName: string;
+    pfp: string;
+    questCompleted: number;
+}
+
+
 export function Feed(loginInfo: LoginInfo) {
     const [feed, setFeed] = useState<FeedPost[]>([]);
     const [hiddenPostIds, setHiddenPostIds] = useState<Set<string>>(new Set());
@@ -16,6 +24,8 @@ export function Feed(loginInfo: LoginInfo) {
     const handleHidePost = (postId: string) => {
         setHiddenPostIds(prev => new Set(prev).add(postId));
     };
+
+    const [friends, setFriends] = useState<Friend[]>([]);
 
     useEffect(() => {
         fetch(buildPath('api/getFeed'), {
@@ -42,34 +52,43 @@ export function Feed(loginInfo: LoginInfo) {
             });
     }, [loginInfo, navigate]);
 
+
+
     return (
         <div className="feed">
-            {feed.length === 0 ? (
-                <h2>No Posts Today :(</h2>
-            ) : (
-                feed
-                    .filter(post => {
-                        if (hiddenPostIds.has(post.postId)) return false;
-                        return !hiddenPostIds.has(post.postId);
-                    })
-                    .map(post => (
-                        <PostCard
-                            key={post.postId}
-                            postId={post.postId}
-                            user={post.creator.displayName}
-                            title={post.questDescription}
-                            imageUrl={post.mediaUrl}
-                            timeStamp={post.timeStamp}
-                            caption={post.caption}
-                            likes={post.likes}
-                            liked={post.likedBy.includes(loginInfo.userId)}
-                            pfp={post.creator.pfpUrl}
-                            userId={loginInfo.userId}
-                            jwtToken={loginInfo.accessToken}
-                            onHide={handleHidePost}
-                        />
-                    ))
-            )}
+            <div className="scrollable-post-list">
+                {feed.length === 0 ? (
+                    <h2>No Posts Today :(</h2>
+                ) : (
+                    feed
+                        .filter(post => !hiddenPostIds.has(post.postId))
+                        .map(post => {
+                            const isFriend = friends.some(f => f.userId === post.creator.userId);
+                            return (
+                                <PostCard
+                                    key={post.postId}
+                                    postId={post.postId}
+                                    user={post.creator.displayName}
+                                    title={post.questDescription}
+                                    imageUrl={post.mediaUrl}
+                                    timeStamp={post.timeStamp}
+                                    caption={post.caption}
+                                    likes={post.likes}
+                                    liked={post.likedBy.includes(loginInfo.userId)}
+                                    pfp={post.creator.pfpUrl}
+                                    userId={loginInfo.userId}
+                                    jwtToken={loginInfo.accessToken}
+                                    onHide={handleHidePost}
+                                    isProfileView={false}
+                                    isFriend={isFriend}
+                                    friendId={post.creator.userId}
+                                />
+                            );
+                        })
+                )}
+            </div>
         </div>
     );
+
+
 }

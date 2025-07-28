@@ -1,11 +1,31 @@
 /* Sidebar container */
 .sidebar {
-    width: 30%;
+    width: 25%;
+    min-width: 220px;
     max-width: 300px;
     background-color: #f3f3f3;
     padding: 0 5px;
     box-sizing: border-box;
-    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+/* Hide sidebar on small screens */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+}
+
+/* Logo */
+.logo-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 6px 0;
+}
+
+.campus-quest-logo {
+    width: 90%;
+    max-width: 240px;
 }
 
 /* Profile section */
@@ -13,22 +33,10 @@
     text-align: center;
 }
 
-/* Logo */
-.logo-wrapper {
-    display: flex;
-    justify-content: center;
-    margin: 10px 5px 0 5px;
-}
-
-.campus-quest-logo {
-    width: 100%;
-}
-
-/* Profile image wrapper with hover overlay */
 .profile-picture-wrapper {
     position: relative;
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     overflow: hidden;
     margin: 0 auto;
@@ -42,7 +50,6 @@
     display: block;
 }
 
-/* Hidden overlay with binoculars */
 .edit-icon {
     position: absolute;
     top: 0;
@@ -61,45 +68,64 @@
     font-size: 20px;
 }
 
-/* Reveal overlay and binoculars only on hover */
 .profile-picture-wrapper:hover .edit-icon {
     opacity: 1;
     pointer-events: auto;
     cursor: pointer;
 }
 
-
-.profile-picture-wrapper:hover .edit-icon {
-    opacity: 1;
-    pointer-events: auto;
-    cursor: pointer;
+/* Stats */
+.stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 8px;
 }
 
-/* Friends Section */
+.stat-item .stat-label {
+    font-size: 12px;
+}
+
+.stat-number {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* Friends */
 .friends-section {
-    margin-top: 20px;
+    margin-top: 2px;
 }
 
-/* Leaderboard */
-.leaderboard-entry {
+.friend-entry {
     display: flex;
     align-items: center;
-    font-size: 14px;
-    margin: 6px 0;
-    padding-left: 40px;
-    gap: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    mask-image: linear-gradient(to right, black 85%, transparent);
-    -webkit-mask-image: linear-gradient(to right, black 85%, transparent);
+    gap: 2px;
+    padding: 2px 0;
+    font-size: 13px;
 }
 
-.leaderboard-entry img {
+.friend-pfp {
     width: 24px;
     height: 24px;
     border-radius: 50%;
     object-fit: cover;
-    flex-shrink: 0;
+}
+
+/* Leaderboard */
+.leaderboard-section {
+    margin-top: 2px;
+}
+
+.leaderboard-entry {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    margin: 2px 0;
+    padding-left: 40px;
+    gap: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    mask-image: linear-gradient(to right, black 85%, transparent);
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent);
 }
 
 .leaderboard-quests {
@@ -114,17 +140,4 @@
 .leaderboard-name {
     font-weight: 500;
     color: #333;
-}
-
-/* Current Quest Styling */
-.current-quest-section {
-    margin-top: 20px;
-    padding: 12px;
-    background: #fff8dc;
-    border-radius: 10px;
-    font-family: 'Poppins', sans-serif;
-}
-
-.current-quest p {
-    margin: 4px 0;
 }

@@ -2,7 +2,7 @@
     background-color: white;
     border-radius: 12px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-    width: 100%;
+    width: 100vh;
     max-width: 700px;
     margin: 20px auto;
     overflow: hidden;
@@ -10,6 +10,8 @@
     flex-direction: column;
     font-family: sans-serif;
     position: relative;
+    scroll-snap-align: start;
+
     /* for absolute menu positioning in profile view */
 }
 
@@ -176,4 +178,48 @@
 
 .more-menu button:hover {
     background-color: #f8f8f873;
+}
+
+.profile-menu-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.profile-clickable {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.profile-popup-menu {
+    position: absolute;
+    top: 120%;
+    left: 0;
+    background: #ffffffcf;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 15;
+    padding: 4px 0;
+    min-width: 140px;
+    font-family: sans-serif;
+}
+
+.profile-popup-menu button {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #000;
+}
+
+.profile-popup-menu button:hover {
+    background-color: #f0f0f0;
 }

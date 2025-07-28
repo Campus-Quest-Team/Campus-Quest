@@ -13,3 +13,35 @@
     gap: 20px;
     /* optional: light background for contrast */
 }
+
+.scrollable-post-list {
+    height: 100vh;
+    /* or a fixed height like 80vh */
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+
+    /* Hide scrollbar (Webkit + Firefox) */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+}
+
+.scrollable-post-list::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari */
+}
+
+/* Current Quest */
+.current-quest-section {
+    margin-top: 12px;
+    padding: 12px;
+    background: #fff8dc;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.current-quest p {
+    margin: 8px 0;
+}

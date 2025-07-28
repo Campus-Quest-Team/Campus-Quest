@@ -8,7 +8,8 @@ import {
     MdDelete,
     MdVisibilityOff,
     MdFlag,
-
+    MdPersonAdd,
+    MdPersonRemove,
 } from "react-icons/md";
 import '../../styles/PostCard.css';
 import type { PostCardProps } from "../../types/dashboardTypes";
@@ -28,9 +29,12 @@ export function PostCard({
     postId,
     onHide,
     isProfileView = false,
-}: PostCardProps & { isProfileView?: boolean }) {
+    isFriend = false,
+    friendId = "",
+}: PostCardProps) {
     const [likedState, setLikedState] = useState(liked);
     const [likeCount, setLikeCount] = useState(likes);
+    const [profileMenuOpen, setProfileMenuOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
 
     function formatTime(date: Date): string {
@@ -75,21 +79,12 @@ export function PostCard({
         try {
             const res = await fetch(buildPath("api/flagPost"), {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    userId,
-                    questPostId: postId,
-                    jwtToken,
-                }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId, questPostId: postId, jwtToken }),
             });
-
             const data = await res.json();
             if (res.ok && data.success) {
-                alert(data.needsReview
-                    ? "Post flagged. It now requires review."
-                    : "Post flagged successfully.");
+                alert(data.needsReview ? "Post flagged. It now requires review." : "Post flagged successfully.");
             } else {
                 console.error("Failed to flag post:", data);
             }
@@ -133,13 +128,53 @@ export function PostCard({
         }
     };
 
+    const handleAddFriend = async () => {
+        try {
+            const res = await fetch(buildPath("api/addFriend"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId, friendId, jwtToken }),
+            });
+            await res.json();
+            window.location.reload();
+        } catch (err) {
+            console.error("Add friend error:", err);
+        }
+    };
+
+    const handleRemoveFriend = async () => {
+        try {
+            const res = await fetch(buildPath("api/removeFriend"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId, friendId, jwtToken }),
+            });
+            await res.json();
+            window.location.reload();
+        } catch (err) {
+            console.error("Remove friend error:", err);
+        }
+    };
+
     return (
         <div className="post-card">
-            {/* Header */}
             {!isProfileView && (
                 <div className="post-header">
-                    <img src={pfp} alt="pfp" className="post-pfp" />
-                    <p className="post-user">{user}</p>
+                    <div className="profile-menu-wrapper">
+                        <div className="profile-clickable" onClick={() => setProfileMenuOpen(prev => !prev)}>
+                            <img src={pfp} alt="pfp" className="post-pfp" />
+                            <p className="post-user">{user}</p>
+                        </div>
+
+                        {profileMenuOpen && (
+                            <div className="profile-popup-menu">
+                                <button onClick={isFriend ? handleRemoveFriend : handleAddFriend}>
+                                    {isFriend ? <><MdPersonRemove /> Remove Friend</> : <><MdPersonAdd /> Add Friend</>}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
                     <div className="post-more-wrapper">
                         <button className="post-more" onClick={() => setMenuOpen(prev => !prev)}>
                             <MdMoreVert size={22} color="#666" />
@@ -147,20 +182,22 @@ export function PostCard({
                         {menuOpen && (
                             <div className="more-menu">
                                 <button onClick={() => onHide(postId)}>
-                                    <span style={{ marginRight: 6 }}><MdVisibilityOff /></span>
-                                    Hide Post
+                                    <span style={{ marginRight: 6 }}>
+                                        <MdVisibilityOff /> Hide Post
+                                    </span>
                                 </button>
                                 <button onClick={handleFlag}>
-                                    <span style={{ marginRight: 6 }}><MdFlag /></span>
-                                    Flag Post
+                                    <span style={{ marginRight: 6 }}>
+                                        <MdFlag /> Flag Post
+                                    </span>
                                 </button>
                             </div>
                         )}
                     </div>
                 </div>
+
             )}
 
-            {/* Image */}
             <div className="post-image-wrapper">
                 {imageUrl ? (
                     <img src={imageUrl} alt="post" className="post-image" />
@@ -178,21 +215,21 @@ export function PostCard({
                         {menuOpen && (
                             <div className="more-menu">
                                 <button onClick={handleEditCaption}>
-                                    <span style={{ marginRight: 6 }}><MdEdit /></span>
-                                    Edit
+                                    <span style={{ marginRight: 6 }}>
+                                        <MdEdit />Edit
+                                    </span>
                                 </button>
                                 <button onClick={handleDelete}>
-                                    <span style={{ marginRight: 6 }}><MdDelete /></span>
-                                    Delete
+                                    <span style={{ marginRight: 6 }}>
+                                        <MdDelete />Delete
+                                    </span>
                                 </button>
-
                             </div>
                         )}
                     </div>
                 )}
             </div>
 
-            {/* Interactions */}
             <div className="post-interaction">
                 <button className="like-btn" onClick={toggleLike}>
                     {likedState ? (
@@ -205,15 +242,14 @@ export function PostCard({
                 <p className="post-title-text">{title}</p>
             </div>
 
-            {/* Caption + Timestamp */}
-            {caption && (
-                <div className="post-caption">
-                    <span className="post-time">
-                        [{formatTime(new Date(timeStamp))}]
-                    </span>{" "}
-                    <span>{caption}</span>
-                </div>
-            )}
-        </div>
+            {
+                caption && (
+                    <div className="post-caption">
+                        <span className="post-time">[{formatTime(new Date(timeStamp))}]</span>{" "}
+                        <span>{caption}</span>
+                    </div>
+                )
+            }
+        </div >
     );
 }

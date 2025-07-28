@@ -112,8 +112,6 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
     }, []);
 
 
-
-
     return (
         <div className="sidebar">
             {/* Logo */}
@@ -131,7 +129,7 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                     />
                     <div
                         className="edit-icon"
-                        onClick={() => profile && onProfileChange(profile)}
+                        onClick={() => profile && onProfileChange()}
                         style={{ cursor: profile ? 'pointer' : 'not-allowed' }}
                     >
                         <FaBinoculars size={18} />
@@ -162,26 +160,6 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                 </div>
             </div>
 
-            {/* Current Quest */}
-            <div className="current-quest-section">
-                <h2>
-                    <span style={{ verticalAlign: 'middle', marginRight: '6px' }}>
-                        <MdTrackChanges size={20} />
-                    </span>
-                    Quest
-                </h2>
-
-                {currentQuest ? (
-                    <div className="current-quest">
-                        <h3>{typeof currentQuest.currentQuest.questData.questDescription === 'string' ? currentQuest.currentQuest.questData.questDescription : ''}</h3>
-                        <p>{new Date(currentQuest.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-
-                    </div>
-                ) : (
-                    <p>Loading current quest...</p>
-                )}
-            </div>
-
             {/* Friend Leaderboard */}
             <div className="friends-section">
                 <h2>
@@ -196,17 +174,19 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                 ) : (
                     [...friends]
                         .sort((a, b) => b.questCompleted - a.questCompleted)
-                        .map((friend, index) => (
+                        .map((friend) => (
                             <div key={friend.userId} className="friend-entry">
-                                <span>#{index + 1}</span> 👤 {friend.displayName} – {friend.questCompleted} quests
+                                <img src={friend.pfp} alt="pfp" className="friend-pfp" />
+                                <span>{friend.questCompleted} <MdTrackChanges size={12} /> {friend.displayName}</span>
                             </div>
+
                         ))
                 )}
             </div>
 
             {/* Global Leaderboard */}
             <div className="leaderboard-section">
-                <h2><span style={{ marginRight: '6px', color: 'gold' }}><FaTrophy /></span>Leaderboard</h2>
+                <h2><span style={{ paddingTop: '2px', marginRight: '6px' }}><FaTrophy /></span>Leaderboard</h2>
 
                 {leaderboard.length === 0 ? (
                     <p>Loading leaderboard...</p>
@@ -217,7 +197,7 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                         .map((entry, i) => (
                             <div key={entry.userId} className="leaderboard-entry">
                                 <span className="leaderboard-rank">#{i + 1}</span> –{' '}
-                                <span className="leaderboard-quests"><strong>{entry.questCompleted}</strong> quests</span>{' '}
+                                <span className="leaderboard-quests"><strong>{entry.questCompleted}</strong> <MdTrackChanges size={10} /></span>{' '}
                                 <span className="leaderboard-name">{entry.displayName}</span>
                             </div>
                         ))
