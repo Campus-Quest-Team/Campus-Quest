@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import buildPath from "../Path";
 import type { FeedPost, FeedResponse } from "../../types/dashboardTypes";
@@ -15,24 +15,44 @@ interface Friend {
     questCompleted: number;
 }
 
+const POSTS_PER_BATCH = 5;
 
 export function Feed(loginInfo: LoginInfo) {
     const [feed, setFeed] = useState<FeedPost[]>([]);
+    const [visibleCount, setVisibleCount] = useState(POSTS_PER_BATCH);
     const [hiddenPostIds, setHiddenPostIds] = useState<Set<string>>(new Set());
+    const [friends, setFriends] = useState<Friend[]>([]);
     const navigate = useNavigate();
+    const observerRef = useRef<HTMLDivElement | null>(null);
 
     const handleHidePost = (postId: string) => {
         setHiddenPostIds(prev => new Set(prev).add(postId));
     };
 
-    const [friends, setFriends] = useState<Friend[]>([]);
+    const loadMore = useCallback(() => {
+        setVisibleCount(prev => Math.min(prev + POSTS_PER_BATCH, feed.length));
+    }, [feed.length]);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) {
+                loadMore();
+            }
+        });
+
+        if (observerRef.current) {
+            observer.observe(observerRef.current);
+        }
+
+        return () => {
+            if (observerRef.current) observer.unobserve(observerRef.current);
+        };
+    }, [loadMore]);
 
     useEffect(() => {
         fetch(buildPath('api/getFeed'), {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
         })
             .then(res => res.json())
@@ -40,23 +60,18 @@ export function Feed(loginInfo: LoginInfo) {
                 if (handleJWTError(data, navigate)) return;
                 if ('feed' in data && data.feed) {
                     setFeed(data.feed);
-                    console.log("Feed fetched successfully:", data.feed);
                 } else {
-                    console.error('Feed fetch failed or empty');
                     toast.warning("No posts available right now.");
                 }
             })
-            .catch(err => {
-                console.error("Feed fetch error:", err);
-                toast.error("Failed to load feed. Please try again later.");
+            .catch(() => {
+                toast.error("Failed to load feed.");
                 navigate('/login');
             });
 
         fetch(buildPath('api/fetchFriends'), {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
         })
             .then(res => res.json())
@@ -65,54 +80,49 @@ export function Feed(loginInfo: LoginInfo) {
                 if ('friends' in data && data.friends) {
                     setFriends(data.friends);
                 } else {
-                    console.error('Friends fetch failed or empty');
                     toast.warning("No friends found.");
                 }
             })
-            .catch(err => {
-                console.error("Friends fetch error:", err);
-                toast.error("Failed to load friends. Please try again later.");
+            .catch(() => {
+                toast.error("Failed to load friends.");
                 navigate('/login');
             });
     }, [loginInfo, navigate]);
 
-
+    const filteredFeed = feed.filter(post => !hiddenPostIds.has(post.postId)).slice(0, visibleCount);
 
     return (
         <div className="feed">
             <div className="scrollable-post-list">
-                {feed.length === 0 ? (
+                {filteredFeed.length === 0 ? (
                     <h2>No Posts Today :(</h2>
                 ) : (
-                    feed
-                        .filter(post => !hiddenPostIds.has(post.postId))
-                        .map(post => {
-                            const isFriend = friends.some(f => f.userId === post.creator.userId);
-                            return (
-                                <PostCard
-                                    key={post.postId}
-                                    postId={post.postId}
-                                    user={post.creator.displayName}
-                                    title={post.questDescription}
-                                    imageUrl={post.mediaUrl}
-                                    timeStamp={post.timeStamp}
-                                    caption={post.caption}
-                                    likes={post.likes}
-                                    liked={post.likedBy.includes(loginInfo.userId)}
-                                    pfp={post.creator.pfpUrl}
-                                    userId={loginInfo.userId}
-                                    jwtToken={loginInfo.accessToken}
-                                    onHide={handleHidePost}
-                                    isProfileView={false}
-                                    isFriend={isFriend}
-                                    friendId={post.creator.userId}
-                                />
-                            );
-                        })
+                    filteredFeed.map((post, index) => {
+                        const isFriend = friends.some(f => f.userId === post.creator.userId);
+                        return (
+                            <PostCard
+                                key={index}
+                                postId={post.postId}
+                                user={post.creator.displayName}
+                                title={post.questDescription}
+                                imageUrl={post.mediaUrl}
+                                timeStamp={post.timeStamp}
+                                caption={post.caption}
+                                likes={post.likes}
+                                liked={post.likedBy.includes(loginInfo.userId)}
+                                pfp={post.creator.pfpUrl}
+                                userId={loginInfo.userId}
+                                jwtToken={loginInfo.accessToken}
+                                onHide={handleHidePost}
+                                isProfileView={false}
+                                isFriend={isFriend}
+                                friendId={post.creator.userId}
+                            />
+                        );
+                    })
                 )}
+                <div ref={observerRef} style={{ height: "1px" }} />
             </div>
         </div>
     );
-
-
 }

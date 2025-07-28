@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import buildPath from '../Path';
 import { PostCard } from '../posts/PostCard';
@@ -14,12 +14,65 @@ import '../../styles/ProfileView.css';
 import { Settings } from './Settings';
 import { handleJWTError } from '../handleJWTError';
 
+const POSTS_PER_BATCH = 4;
+
 export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [posts, setPosts] = useState<FeedPost[]>([]);
+    const [visibleCount, setVisibleCount] = useState(POSTS_PER_BATCH);
     const [isLoading, setIsLoading] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const navigate = useNavigate();
+    const observerRef = useRef<HTMLDivElement | null>(null);
+
+    const loadMore = useCallback(() => {
+        setVisibleCount(prev => Math.min(prev + POSTS_PER_BATCH, posts.length));
+    }, [posts.length]);
+
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const markerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const scrollEl = scrollRef.current;
+        const marker = markerRef.current;
+
+        if (!scrollEl || !marker) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                console.log("Marker visibility:", entry.isIntersecting);
+                if (entry.isIntersecting) {
+                    scrollEl.classList.remove('snap-enabled'); // Header visible
+                } else {
+                    scrollEl.classList.add('snap-enabled'); // Header out of view
+                }
+            },
+            {
+                root: scrollEl,
+                threshold: 0.1, // triggers earlier
+            }
+        );
+
+        observer.observe(marker);
+
+        return () => observer.disconnect();
+    }, []);
+
+
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) {
+                loadMore();
+            }
+        });
+
+        if (observerRef.current) observer.observe(observerRef.current);
+
+        return () => {
+            if (observerRef.current) observer.unobserve(observerRef.current);
+        };
+    }, [loadMore]);
 
     useEffect(() => {
         fetch(buildPath('api/getProfile'), {
@@ -41,11 +94,7 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
                 setProfile(profileData);
                 setPosts((profileData.questPosts || []).map(qp => ({
                     postId: qp.postId,
-                    creator: qp.creator ?? {
-                        userId: '',
-                        displayName: '',
-                        pfpUrl: '',
-                    },
+                    creator: qp.creator ?? { userId: '', displayName: '', pfpUrl: '' },
                     caption: qp.caption,
                     questDescription: qp.questDescription,
                     mediaUrl: qp.mediaUrl,
@@ -69,74 +118,73 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
         }
     };
 
+    const visiblePosts = posts.slice(0, visibleCount);
+
     return (
         <div className="profile-overlay-container" onClick={handleOverlayClick}>
-            <div
-                className={`profile-modal-wrapper ${showSettings ? 'with-settings' : ''}`}
-            >
+            <div className={`profile-modal-wrapper ${showSettings ? 'with-settings' : ''}`}>
                 {!showSettings || window.innerWidth > 700 ? (
                     <div className="profile-main-modal">
-                        <div className="profile-header-bar">
-                            <h2 style={{ margin: 0 }}>Your Profile</h2>
-                            <button
-                                onClick={() => setShowSettings(prev => !prev)}
-                                className="profile-settings-toggle-btn"
-                                title="Settings"
-                            >
-                                <FiSettings size={24} />
-                            </button>
-                        </div>
+                        <div className="profile-scroll-area" ref={scrollRef}>
+                            <div className="profile-header-bar">
+                                <h2 style={{ margin: 0 }}>Your Profile</h2>
+                                <button
+                                    onClick={() => setShowSettings(prev => !prev)}
+                                    className="profile-settings-toggle-btn"
+                                    title="Settings"
+                                >
+                                    <FiSettings size={24} />
+                                </button>
+                            </div>
 
-                        {isLoading ? (
-                            <div className="loading">Loading...</div>
-                        ) : (
-                            <>
-                                <div className="profile-user-info">
-                                    <img
-                                        className="profile-avatar-img"
-                                        src={profile?.pfp || 'default-profile.png'}
-                                        alt="PFP"
-                                    />
-                                    <div>
-                                        <h3 style={{ margin: 0 }}>{profile?.displayName || 'You'}</h3>
-                                        <p style={{ margin: 0, color: '#666' }}>
-                                            {profile?.bio || 'No bio yet.'}
-                                        </p>
-                                    </div>
+                            <div className="profile-user-info">
+                                <img
+                                    className="profile-avatar-img"
+                                    src={profile?.pfp || 'default-profile.png'}
+                                    alt="PFP"
+                                />
+                                <div>
+                                    <h3 style={{ margin: 0 }}>{profile?.displayName || 'You'}</h3>
+                                    <p style={{ margin: 0, color: '#666' }}>
+                                        {profile?.bio || 'No bio yet.'}
+                                    </p>
                                 </div>
+                            </div>
 
-                                {posts.length === 0 ? (
-                                    <div className="profile-no-posts-message">
-                                        <p>📭 No Posts Yet!</p>
-                                    </div>
-                                ) : (
-                                    <div className="profile-posts-container">
-                                        {posts.map((post, index) => (
-                                            <PostCard
-                                                key={post.postId || index}
-                                                postId={post.postId}
-                                                caption={post.caption}
-                                                title={post.questDescription}
-                                                imageUrl={post.mediaUrl}
-                                                timeStamp={post.timeStamp}
-                                                likes={post.likes}
-                                                liked={post.likedBy?.includes(loginInfo.userId)}
-                                                user={profile?.displayName || ''}
-                                                pfp={profile?.pfp || ''}
-                                                userId={loginInfo.userId}
-                                                jwtToken={loginInfo.accessToken}
-                                                onHide={() =>
-                                                    setPosts(prev =>
-                                                        prev.filter(p => p.postId !== post.postId)
-                                                    )
-                                                }
-                                                isProfileView={true}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </>
-                        )}
+                            <div ref={markerRef} style={{ height: 1 }} />
+
+                            {posts.length === 0 ? (
+                                <div className="profile-no-posts-message">
+                                    <p>📭 No Posts Yet!</p>
+                                </div>
+                            ) : (
+                                <div className="profile-posts-container">
+                                    {visiblePosts.map(post => (
+                                        <PostCard
+                                            key={post.postId}
+                                            postId={post.postId}
+                                            caption={post.caption}
+                                            title={post.questDescription}
+                                            imageUrl={post.mediaUrl}
+                                            timeStamp={post.timeStamp}
+                                            likes={post.likes}
+                                            liked={post.likedBy?.includes(loginInfo.userId)}
+                                            user={profile?.displayName || ''}
+                                            pfp={profile?.pfp || ''}
+                                            userId={loginInfo.userId}
+                                            jwtToken={loginInfo.accessToken}
+                                            onHide={() =>
+                                                setPosts(prev =>
+                                                    prev.filter(p => p.postId !== post.postId)
+                                                )
+                                            }
+                                            isProfileView={true}
+                                        />
+                                    ))}
+                                    <div ref={observerRef} style={{ height: '1px' }} />
+                                </div>
+                            )}
+                        </div>
                     </div>
                 ) : null}
 
