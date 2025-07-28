@@ -1,19 +1,19 @@
-import { useState } from "react";
-import {
-    MdFavorite,
-    MdFavoriteBorder,
-    MdMoreVert,
-    MdBrokenImage,
-    MdEdit,
-    MdDelete,
-    MdVisibilityOff,
-    MdFlag,
-    MdPersonAdd,
-    MdPersonRemove,
-} from "react-icons/md";
+import { lazy, Suspense, useState } from "react";
+
+const MdFavorite = lazy(() => import("react-icons/md").then(mod => ({ default: mod.MdFavorite })));
+const MdFavoriteBorder = lazy(() => import("react-icons/md").then(mod => ({ default: mod.MdFavoriteBorder })));
+const MdBrokenImage = lazy(() => import("react-icons/md").then(mod => ({ default: mod.MdBrokenImage })));
+const MdEdit = lazy(() => import("react-icons/md").then(mod => ({ default: mod.MdEdit })));
+const MdDelete = lazy(() => import("react-icons/md").then(mod => ({ default: mod.MdDelete })));
+const MdVisibilityOff = lazy(() => import("react-icons/md").then(mod => ({ default: mod.MdVisibilityOff })));
+const MdFlag = lazy(() => import("react-icons/md").then(mod => ({ default: mod.MdFlag })));
+const MdPersonAdd = lazy(() => import("react-icons/md").then(mod => ({ default: mod.MdPersonAdd })));
+const MdPersonRemove = lazy(() => import("react-icons/md").then(mod => ({ default: mod.MdPersonRemove })));
+
 import '../../styles/PostCard.css';
 import type { PostCardProps } from "../../types/dashboardTypes";
 import buildPath from "../Path";
+import { MdMoreVert } from "react-icons/md";
 
 export function PostCard({
     user,
@@ -169,26 +169,26 @@ export function PostCard({
                         {profileMenuOpen && (
                             <div className="profile-popup-menu">
                                 <button onClick={isFriend ? handleRemoveFriend : handleAddFriend}>
-                                    {isFriend ? <><MdPersonRemove /> Remove Friend</> : <><MdPersonAdd /> Add Friend</>}
+                                    {isFriend ? <><Suspense fallback={null}><MdPersonRemove /></Suspense> Remove Friend</> : <><Suspense fallback={null}><MdPersonAdd /></Suspense> Add Friend</>}
                                 </button>
                             </div>
                         )}
                     </div>
 
                     <div className="post-more-wrapper">
-                        <button className="post-more" onClick={() => setMenuOpen(prev => !prev)}>
+                        <button className="post-more" onClick={() => setMenuOpen(prev => !prev)} about="More Options">
                             <MdMoreVert size={22} color="#666" />
                         </button>
                         {menuOpen && (
                             <div className="more-menu">
                                 <button onClick={() => onHide(postId)}>
                                     <span style={{ marginRight: 6 }}>
-                                        <MdVisibilityOff /> Hide Post
+                                        <Suspense fallback={null}><MdVisibilityOff /></Suspense> Hide
                                     </span>
                                 </button>
                                 <button onClick={handleFlag}>
                                     <span style={{ marginRight: 6 }}>
-                                        <MdFlag /> Flag Post
+                                        <Suspense fallback={null}><MdFlag /></Suspense> Flag
                                     </span>
                                 </button>
                             </div>
@@ -203,25 +203,25 @@ export function PostCard({
                     <img src={imageUrl} alt="post" className="post-image" loading="lazy" />
                 ) : (
                     <div className="post-image-placeholder">
-                        <MdBrokenImage size={40} color="#aaa" />
+                        <Suspense fallback={null}><MdBrokenImage size={40} color="#aaa" /></Suspense>
                         <span>Image Not Available</span>
                     </div>
                 )}
                 {isProfileView && (
                     <div className="post-image-overlay">
-                        <button className="post-more" onClick={() => setMenuOpen(prev => !prev)}>
+                        <button className="post-more" onClick={() => setMenuOpen(prev => !prev)} alt-text="More Options">
                             <MdMoreVert size={22} color="#000" />
                         </button>
                         {menuOpen && (
                             <div className="more-menu">
-                                <button onClick={handleEditCaption}>
+                                <button onClick={handleEditCaption} alt-text="Edit Caption">
                                     <span style={{ marginRight: 6 }}>
-                                        <MdEdit />Edit
+                                        <Suspense fallback={null}><MdEdit /></Suspense>Edit
                                     </span>
                                 </button>
-                                <button onClick={handleDelete}>
+                                <button onClick={handleDelete} alt-text="Delete Post">
                                     <span style={{ marginRight: 6 }}>
-                                        <MdDelete />Delete
+                                        <Suspense fallback={null}><MdDelete /></Suspense>Delete
                                     </span>
                                 </button>
                             </div>
@@ -231,11 +231,11 @@ export function PostCard({
             </div>
 
             <div className="post-interaction">
-                <button className="like-btn" onClick={toggleLike}>
+                <button className="like-btn" onClick={toggleLike} alt-text="Like Post">
                     {likedState ? (
-                        <MdFavorite size={24} color="red" />
+                        <Suspense fallback={null}><MdFavorite size={24} color="red" /></Suspense>
                     ) : (
-                        <MdFavoriteBorder size={24} color="black" />
+                        <Suspense fallback={null}><MdFavoriteBorder size={24} color="black" /></Suspense>
                     )}
                 </button>
                 <span className="like-count">{likeCount}</span>

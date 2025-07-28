@@ -38,11 +38,13 @@
 .campus-quest-logo {
     width: 90%;
     max-width: 240px;
+    height: auto;
 }
 
 /* Profile section */
 .profile-section {
     text-align: center;
+    width: 100%;
 }
 
 .profile-picture-wrapper {
@@ -125,6 +127,7 @@
 /* Leaderboard */
 .leaderboard-section {
     margin-top: 2px;
+    height: 100%;
 }
 
 .leaderboard-entry {
