@@ -215,7 +215,7 @@ export function PostCard({
                 {/* CAPTION MOVED HERE */}
                 {caption && (
                     <div className="post-caption-inline">
-                        <ExpandableText text={`${formatTime(new Date(timeStamp))} ${caption}`} />
+                        <ExpandableText text={`${formatTime(new Date(timeStamp))}: ${caption}`} />
                     </div>
 
                 )}
@@ -229,28 +229,30 @@ export function PostCard({
                         <div className="more-menu">
                             {isProfileView ? (
                                 <>
-                                    <button onClick={() => onHide(postId)}>
-                                        <span style={{ marginRight: 6 }}>
-                                            <Suspense fallback={null}><MdVisibilityOff /></Suspense> Hide
+                                    <button onClick={handleEditCaption}>
+                                        <span style={{ display: "flex", marginRight: 6 }}>
+                                            <Suspense fallback={null}><MdEdit /></Suspense> Edit
                                         </span>
                                     </button>
-                                    <button onClick={handleFlag}>
-                                        <span style={{ marginRight: 6 }}>
-                                            <Suspense fallback={null}><MdFlag /></Suspense> Flag
+                                    <button onClick={handleDelete}>
+                                        <span style={{ display: "flex", marginRight: 6 }}>
+                                            <Suspense fallback={null}><MdDelete /></Suspense> Delete
                                         </span>
                                     </button>
                                 </>
                             ) : (
                                 <>
-                                    <button onClick={handleEditCaption}>
-                                        <span style={{ marginRight: 6 }}>
-                                            <Suspense fallback={null}><MdEdit /></Suspense> Edit
+                                    <button onClick={() => onHide(postId)}>
+                                        <span style={{ display: "flex", marginRight: 6 }}>
+                                            <Suspense fallback={null}><MdVisibilityOff /></Suspense> Hide
                                         </span>
                                     </button>
-                                    <button onClick={handleDelete}>
-                                        <span style={{ marginRight: 6 }}>
-                                            <Suspense fallback={null}><MdDelete /></Suspense> Delete
+                                    <button onClick={handleFlag}>
+                                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                            <Suspense fallback={null}><MdFlag /></Suspense>
+                                            Flag
                                         </span>
+
                                     </button>
                                 </>
                             )}
