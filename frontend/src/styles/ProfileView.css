@@ -71,10 +71,22 @@
 
 .profile-user-info {
     display: flex;
-    gap: clamp(0.75rem, 3vw, 1rem);
     align-items: center;
+    gap: clamp(0.75rem, 3vw, 1rem);
     padding: 0 clamp(1rem, 4vw, 1.5rem) clamp(1.25rem, 3vh, 1.5rem);
 }
+
+/* This is the div that wraps the name and bio text */
+.profile-user-info>div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Left-align the text inside */
+    justify-content: center;
+    text-align: left;
+    flex: 1;
+}
+
 
 .profile-avatar-img {
     width: clamp(64px, 10vw, 80px);
