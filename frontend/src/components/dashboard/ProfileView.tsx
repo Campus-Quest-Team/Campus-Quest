@@ -6,17 +6,17 @@ import { FiSettings } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import type {
     FeedPost,
+    PopupProps,
     ProfileData,
-    ProfileEditProps,
-    ProfileResponse,
 } from '../../types/dashboardTypes';
 import '../../styles/ProfileView.css';
 import { Settings } from './Settings';
 import { handleJWTError } from '../handleJWTError';
+import type { ProfileResponse } from '../../types/APITypes';
 
 const POSTS_PER_BATCH = 4;
 
-export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
+export function ProfileView({ loginInfo, onClose }: PopupProps) {
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [posts, setPosts] = useState<FeedPost[]>([]);
     const [visibleCount, setVisibleCount] = useState(POSTS_PER_BATCH);

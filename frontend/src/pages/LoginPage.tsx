@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { storeLogin } from '../loginStorage';
+import buildPath from '../components/Path';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
-import buildPath from '../components/Path';
+
+import { storeLogin } from '../loginStorage';
 import '../styles/Login.css';
 import type { LoginInfo, UserPayload } from '../types/APITypes';
 import fullLogo from '../assets/full_logo.svg';

@@ -1,19 +1,5 @@
 import type { LoginInfo } from "./APITypes";
 
-export interface QuestPost {
-  _id: string;
-  questId: string;
-  userId: string;
-  caption: string;
-  questDescription: string;
-  likes: number;
-  flagged: number;
-  timeStamp: string;
-  likedBy: string[];
-  flaggedBy: string[];
-  mediaUrl: string;
-}
-
 export interface FeedPost {
   postId: string;
   caption: string;
@@ -31,11 +17,6 @@ export interface FeedPost {
   };
 }
 
-export interface FeedResponse {
-  feed: FeedPost[];
-  jwtToken: string;
-}
-
 export type ProfileData = {
   displayName: string;
   bio: string;
@@ -44,24 +25,12 @@ export type ProfileData = {
   questCompleted: number;
 };
 
-
-export interface ProfileResponse {
-  profileData: ProfileData;
-  jwtToken: string;
-}
-
 export interface FriendData {
   userId: string;
   displayName: string;
   pfp: string;
   questCompleted: number;
 }
-
-export interface FriendsResponse {
-  friends: FriendData[];
-  jwtToken: string;
-}
-
 
 export interface LeaderboardEntry {
   userId: string;
@@ -70,23 +39,7 @@ export interface LeaderboardEntry {
   questCompleted: number;
 }
 
-export interface LeaderboardResponse {
-  scoreboard: LeaderboardEntry[];
-  jwtToken: string;
-}
-
-export interface CurrentQuestResponse {
-  success: boolean;
-  currentQuest: {
-    questId: string;
-    timestamp: string;
-    questData: Record<string, unknown>;
-    questDescription: string;
-
-  };
-  timestamp: string;
-}
-
+/* -- Properties -- */
 export interface PostCardProps {
   userId: string;
   jwtToken: string;
@@ -105,12 +58,7 @@ export interface PostCardProps {
   friendId?: string;
 }
 
-export interface SidebarProps {
-  loginInfo: LoginInfo;
-  onProfileChange: () => void;
-}
-
-export interface ProfileEditProps {
+export interface PopupProps {
   loginInfo: LoginInfo;
   onClose: () => void;
 }

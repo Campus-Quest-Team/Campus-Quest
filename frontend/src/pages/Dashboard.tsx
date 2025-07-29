@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import "../styles/Dashboard.css";
-import { isLoginValid, retrieveLogin } from "../loginStorage";
 import { useNavigate } from "react-router";
+
+import { isLoginValid, retrieveLogin } from "../loginStorage";
 
 import { DashboardSidebar } from "../components/dashboard/Sidebar";
 import { Feed } from "../components/dashboard/Feed";
 import { ProfileView } from "../components/dashboard/ProfileView";
+
+import "../styles/Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();

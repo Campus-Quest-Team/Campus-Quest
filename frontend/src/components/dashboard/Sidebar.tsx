@@ -9,21 +9,18 @@ import { MdCheckCircle, MdCancel } from 'react-icons/md';
 import { FaBinoculars } from 'react-icons/fa';
 import '../../styles/Sidebar.css';
 import { toast } from 'react-toastify';
-
-
-// types
+import type { LoginInfo, FriendsResponse, LeaderboardResponse, ProfileResponse } from '../../types/APITypes';
 import type {
-    FriendsResponse,
-    LeaderboardResponse,
     FriendData,
     LeaderboardEntry,
     ProfileData,
-    ProfileResponse,
-    SidebarProps
 } from '../../types/dashboardTypes';
 import { handleJWTError } from '../handleJWTError';
 
-export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
+export function DashboardSidebar({ loginInfo, onProfileChange }: {
+    loginInfo: LoginInfo;
+    onProfileChange: () => void;
+}) {
     const navigate = useNavigate();
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [friends, setFriends] = useState<FriendData[]>([]);

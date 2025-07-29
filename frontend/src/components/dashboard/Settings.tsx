@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import buildPath from "../Path";
-import type { ProfileData, ProfileEditProps, ProfileResponse } from "../../types/dashboardTypes";
+import type { PopupProps, ProfileData } from "../../types/dashboardTypes";
 import { useNavigate } from "react-router-dom";
 import { clearToken } from "../../loginStorage";
 import { FiCamera, FiEdit3, FiBell } from "react-icons/fi";
 import { toast } from "react-toastify";
 import '../../styles/Settings.css';
+import type { ProfileResponse } from "../../types/APITypes";
 
-export function Settings({ loginInfo, onClose }: ProfileEditProps) {
+export function Settings({ loginInfo, onClose }: PopupProps) {
     const navigate = useNavigate();
     const [bio, setBio] = useState('');
     const [displayName, setDisplayName] = useState('');
