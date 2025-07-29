@@ -1,23 +1,22 @@
-/* Sidebar container */
+/* Sidebar Container */
 .sidebar {
     width: clamp(220px, 25vw, 300px);
     background-color: #f3f3f3;
     padding: 0 clamp(6px, 1vw, 12px);
     box-sizing: border-box;
     overflow-y: auto;
-
     scrollbar-width: none;
-    /* Firefox */
     -ms-overflow-style: none;
-    /* IE and Edge */
+}
+
+.sidebar-content {
+    padding-left: 2rem;
 }
 
 .sidebar::-webkit-scrollbar {
     display: none;
-    /* Chrome, Safari, Opera */
 }
 
-/* Hide sidebar on small screens */
 @media (max-width: 768px) {
     .sidebar {
         display: none;
@@ -26,9 +25,8 @@
 
 /* Logo */
 .logo-wrapper {
-    display: flex;
-    justify-content: center;
     margin: clamp(6px, 1vh, 12px) 0;
+    text-align: center;
 }
 
 .campus-quest-logo {
@@ -39,17 +37,17 @@
 
 /* Profile Section */
 .profile-section {
-    text-align: center;
     width: 100%;
+    margin-top: 1rem;
 }
 
 .profile-picture-wrapper {
     position: relative;
-    width: 80px;
-    height: 80px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     overflow: hidden;
-    margin: 0 auto;
+    margin-bottom: 0.5rem;
 }
 
 .profile-img {
@@ -57,7 +55,6 @@
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
-    display: block;
 }
 
 .edit-icon {
@@ -75,7 +72,6 @@
     opacity: 0;
     transition: opacity 0.2s ease;
     pointer-events: none;
-    font-size: 1.25rem;
 }
 
 .profile-picture-wrapper:hover .edit-icon {
@@ -86,38 +82,85 @@
 
 /* Stats */
 .stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* aligns each .stat-item left */
+    gap: 0.5rem;
 }
 
+
 .stat-item {
-    text-align: center;
-    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    line-height: 1;
+    /* keeps icons/text aligned tightly */
 }
 
 .stat-number {
-    font-size: clamp(1rem, 1.8vw, 1.5rem);
     font-weight: bold;
+    font-size: 1rem;
 }
 
 .stat-label {
-    font-size: clamp(0.6rem, 0.9vw, 0.75rem);
-    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #333;
+    font-size: 0.8rem;
+    white-space: nowrap;
 }
 
-/* Friends */
+
+/* Current Quest Section */
+.current-quest-section {
+    margin-top: 1rem;
+}
+
+.current-quest-section h2 {
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0.25rem;
+}
+
+.quest-description {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: #333;
+}
+
+.quest-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+}
+
+
+/* Friends Section */
 .friends-section {
     margin-top: 1rem;
+}
+
+.friends-section h2 {
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0.5rem;
 }
 
 .friend-entry {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 0;
-    font-size: clamp(0.75rem, 1vw, 0.85rem);
+    font-size: 0.85rem;
+    margin-bottom: 4px;
 }
 
 .friend-pfp {
@@ -127,16 +170,24 @@
     object-fit: cover;
 }
 
-/* Leaderboard */
+/* Leaderboard Section */
 .leaderboard-section {
     margin-top: 1rem;
     padding-bottom: 1rem;
 }
 
+.leaderboard-section h2 {
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0.5rem;
+}
+
 .leaderboard-entry {
     display: flex;
     align-items: center;
-    font-size: clamp(0.75rem, 1vw, 0.85rem);
+    font-size: 0.85rem;
     margin: 4px 0;
     padding-left: 1.5rem;
     gap: 6px;
@@ -157,5 +208,11 @@
 
 .leaderboard-quests {
     font-weight: bold;
-    color: #EFBF04;
+    color: #333;
+}
+
+.profile-top-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
