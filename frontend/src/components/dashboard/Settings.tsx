@@ -7,6 +7,7 @@ import { FiCamera, FiEdit3, FiBell } from "react-icons/fi";
 import { toast } from "react-toastify";
 import '../../styles/Settings.css';
 import type { ProfileResponse } from "../../types/APITypes";
+import { MdCancel, MdCheck } from "react-icons/md";
 
 export function Settings({ loginInfo, onClose }: PopupProps) {
     const navigate = useNavigate();
@@ -141,12 +142,19 @@ export function Settings({ loginInfo, onClose }: PopupProps) {
     }, [loginInfo, navigate]);
 
     return (
-        <div className="settings-popup-container">
-            <div className="settings-sidebar-panel">
+        <div className="settings-overlay-backdrop" onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
+        }}>
+            <div className="settings-popup-container">
+                <div className="settings-popup-header">
+                    <button onClick={onClose} className="settings-icon-button cancel" title="Cancel"><MdCancel /></button>
+                    <button onClick={handleEditSubmit} className="settings-icon-button save" title="Save"><MdCheck /></button>
+                </div>
                 <div className="settings-editable-avatar" onClick={() => fileInputRef.current?.click()}>
                     <img src={pfpPreview || profile?.pfp || 'default-profile.png'} alt="Profile" />
                     <div className="settings-avatar-overlay-icon"><FiCamera /></div>
                     <input
+                        autoFocus={true}
                         type="file"
                         accept="image/*"
                         ref={fileInputRef}
@@ -158,11 +166,11 @@ export function Settings({ loginInfo, onClose }: PopupProps) {
                 <div className="settings-editable-field editable-hover">
                     {isEditingName ? (
                         <input
+                            autoFocus={true}
                             type="text"
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             onBlur={() => setIsEditingName(false)}
-                            autoFocus
                         />
                     ) : (
                         <span onClick={() => setIsEditingName(true)}>
@@ -199,12 +207,8 @@ export function Settings({ loginInfo, onClose }: PopupProps) {
                     </div>
                 </div>
 
-                <div className="settings-action-buttons">
-                    <button onClick={onClose}>Cancel</button>
-                    <button onClick={handleEditSubmit}>Save Changes</button>
-                </div>
                 <button className="settings-logout-btn" onClick={handleLogout}>
-                    🚪 Logout
+                    Logout
                 </button>
             </div>
         </div>

@@ -126,7 +126,7 @@ export function ProfileView({ loginInfo, onClose }: PopupProps) {
                     <div className="profile-main-modal">
                         <div className="profile-scroll-area" ref={scrollRef}>
                             <div className="profile-header-bar">
-                                <h2 style={{ margin: 0 }}>Your Profile</h2>
+                                <h2 style={{ margin: 0, fontSize: 30 }}>Your Profile</h2>
                                 <button
                                     onClick={() => setShowSettings(prev => !prev)}
                                     className="profile-settings-toggle-btn"

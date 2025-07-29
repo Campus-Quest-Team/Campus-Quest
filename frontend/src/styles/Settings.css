@@ -1,20 +1,31 @@
 /* === SETTINGS SIDEBAR === */
-.settings-popup-container {
-    position: relative;
-    background-color: transparent;
-    box-shadow: none;
-    padding: 0;
+.settings-overlay-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    /* translucent dark overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050;
+    /* above profile modal, below toast/alerts */
 }
 
-.settings-sidebar-panel {
-    width: clamp(280px, 80vw, 350px);
-    max-height: 90vh;
-    overflow-y: auto;
-    background-color: #fff;
+.settings-popup-container {
+    position: fixed;
+    /* Overlay-style positioning */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1100;
+    /* Above the profile modal */
+    background-color: white;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     border-radius: 0.75rem;
     padding: clamp(1rem, 4vw, 1.5rem);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    box-sizing: border-box;
 }
 
 /* === PROFILE PICTURE === */
@@ -168,4 +179,34 @@
 
 .settings-toggle-switch.on .settings-toggle-knob {
     left: 26px;
+}
+
+.settings-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.settings-icon-button {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    font-weight: bold;
+    color: #333;
+    transition: transform 0.2s ease;
+}
+
+.settings-icon-button:hover {
+    transform: scale(1.1);
+}
+
+.settings-icon-button.cancel {
+    color: #e74c3c;
+}
+
+.settings-icon-button.save {
+    color: #2ecc71;
 }
