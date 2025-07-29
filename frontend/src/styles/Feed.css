@@ -1,0 +1,33 @@
+/* Feed container that stretches to viewport height */
+.feed {
+    flex: 1;
+    height: 100vh;
+    box-sizing: border-box;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(1rem, 2vh, 1.5rem);
+    padding: 0 1rem
+        /* Optional light background */
+}
+
+/* Scrollable post list with snap and hidden scrollbar */
+.scrollable-post-list {
+    overflow-y: scroll;
+    scroll-snap-type: y proximity;
+    scroll-behavior: smooth;
+
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    /* momentum-style scrolling on iOS */
+
+    /* IE and Edge */
+}
+
+.scrollable-post-list::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari */
+}

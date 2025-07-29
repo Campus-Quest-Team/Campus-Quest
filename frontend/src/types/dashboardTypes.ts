@@ -1,19 +1,5 @@
 import type { LoginInfo } from "./APITypes";
 
-export interface QuestPost {
-  _id: string;
-  questId: string;
-  userId: string;
-  caption: string;
-  questDescription: string;
-  likes: number;
-  flagged: number;
-  timeStamp: string;
-  likedBy: string[];
-  flaggedBy: string[];
-  mediaUrl: string;
-}
-
 export interface FeedPost {
   postId: string;
   caption: string;
@@ -31,22 +17,13 @@ export interface FeedPost {
   };
 }
 
-export interface FeedResponse {
-  feed: FeedPost[];
-  jwtToken: string;
-}
-
-export interface ProfileData {
-  questCompleted: number;
+export type ProfileData = {
   displayName: string;
+  bio: string;
   pfp: string;
-  questPosts: QuestPost[];
-}
-
-export interface ProfileResponse {
-  profileData: ProfileData;
-  jwtToken: string;
-}
+  questPosts?: FeedPost[];
+  questCompleted: number;
+};
 
 export interface FriendData {
   userId: string;
@@ -55,12 +32,6 @@ export interface FriendData {
   questCompleted: number;
 }
 
-export interface FriendsResponse {
-  friends: FriendData[];
-  jwtToken: string;
-}
-
-
 export interface LeaderboardEntry {
   userId: string;
   displayName: string;
@@ -68,37 +39,26 @@ export interface LeaderboardEntry {
   questCompleted: number;
 }
 
-export interface LeaderboardResponse {
-  scoreboard: LeaderboardEntry[];
-  jwtToken: string;
-}
-
-export interface CurrentQuestResponse {
-  success: boolean;
-  currentQuest: {
-    questId: string;
-    timestamp: string;
-    questData: any; // refine this if you know its shape
-  };
-  questDescription: string;
-  timestamp: string;
-}
-
+/* -- Properties -- */
 export interface PostCardProps {
+  userId: string;
+  jwtToken: string;
+  postId: string;
   user: string;
   title: string;
   imageUrl: string;
+  timeStamp: string;
   caption: string;
+  liked: boolean;
   likes: number;
   pfp: string;
+  onHide: (postId: string) => void;
+  isProfileView?: boolean;
+  isFriend?: boolean;
+  friendId?: string;
 }
 
-export interface SidebarProps {
-  loginInfo: LoginInfo;
-  onProfileChange: (profile: ProfileData) => void;
-}
-
-export interface ProfileEditProps {
+export interface PopupProps {
   loginInfo: LoginInfo;
   onClose: () => void;
 }

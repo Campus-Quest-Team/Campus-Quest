@@ -152,7 +152,8 @@ router.post('/getProfile', validateJWTMiddleware, async (req, res, next) => {
             displayName: user.profile?.displayName,
             pfp: pfpUrl,
             bio: user.profile?.bio,
-            questPosts: postsWithUrls.sort((a, b) => new Date(b.timeStamp) - new Date(a.timeStamp))
+            questPosts: postsWithUrls.sort((a, b) => new Date(b.timeStamp) - new Date(a.timeStamp)),
+            notifications: user.settings?.notifications
         };
 
         sendSuccessResponse(res, { profileData }, jwtToken);

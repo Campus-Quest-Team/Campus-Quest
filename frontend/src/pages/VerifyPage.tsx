@@ -3,6 +3,7 @@ import { jwtDecode } from 'jwt-decode';
 import type { UserPayload } from '../types/APITypes';
 import buildPath from '../components/Path';
 import '../styles/Verify.css';
+import { toast } from 'react-toastify';
 
 function VerifyPage() {
     const [message, setMessage] = useState(''); // used to give user a response
@@ -37,13 +38,13 @@ function VerifyPage() {
             }
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            alert(msg);
+            toast.error(msg);
             return;
         }
 
-        // Send packet to /email-verification to validate JWT and update DB entry
+        // Send packet to /email/emailVerification to validate JWT and update DB entry
         try {
-            const response = await fetch(buildPath('api/email-verification'), {
+            const response = await fetch(buildPath('api/email/emailVerification'), {
                 method: 'POST',
                 body: packetJSON,
                 headers: { 'Content-Type': 'application/json' }

@@ -4,6 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 import buildPath from '../components/Path';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Login.css';
+import { toast } from 'react-toastify';
 
 interface UserPayload {
   userId: number;
@@ -40,26 +41,31 @@ function RegisterPage() {
       email: false,
     });
 
-
     if (registerName.length < 2) {
       setErrors(prev => ({ ...prev, username: true }));
-      return setMessage('Username must have 2+ characters');
+      toast.error('Username must have 2+ characters');
+      return;
     }
     if (registerPassword.length < 5) {
       setErrors(prev => ({ ...prev, password: true }));
-      return setMessage('Password must have 5+ characters');
+      toast.error('Password must have 5+ characters');
+      return;
     }
     if (registerFName.length < 2) {
       setErrors(prev => ({ ...prev, firstName: true }));
-      return setMessage('First name must have 2+ characters');
+      toast.error('First name must have 2+ characters');
+      return;
     }
     if (!registerEmail.includes('@') || !registerEmail.includes('.')) {
       setErrors(prev => ({ ...prev, email: true }));
-      return setMessage('Invalid email format');
+      toast.error('Invalid email format');
+      return;
     }
 
-    if (BadWordsChecker(registerName) || BadWordsChecker(registerFName) || BadWordsChecker(registerLName))
-      return setMessage("It's okay to spread positivity too, you know?");
+    if (BadWordsChecker(registerName) || BadWordsChecker(registerFName) || BadWordsChecker(registerLName)) {
+      toast.warn("It's okay to spread positivity too, you know?");
+      return;
+    }
 
     const packet = {
       login: registerName,
@@ -69,6 +75,9 @@ function RegisterPage() {
       email: registerEmail,
     };
 
+    // 👇 Add loading toast here
+    const loadingToast = toast.loading('Creating your account...');
+
     try {
       const res = await fetch(buildPath('api/register'), {
         method: 'POST',
@@ -77,12 +86,16 @@ function RegisterPage() {
       });
 
       const data = JSON.parse(await res.text());
-      if (data.error) return setMessage(data.error);
+
+      if (data.error) {
+        toast.update(loadingToast, { render: data.error, type: 'error', isLoading: false, autoClose: 3000 });
+        return;
+      }
 
       const { accessToken } = data;
       const decoded = jwtDecode<UserPayload>(accessToken);
 
-      const emailRes = await fetch(buildPath('api/email-send'), {
+      const emailRes = await fetch(buildPath('api/email/emailSend'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -94,15 +107,31 @@ function RegisterPage() {
       });
 
       const emailData = JSON.parse(await emailRes.text());
-      if (emailData.error) return setMessage(emailData.error);
 
-      setMessage('Account created! Check your email to verify your account. ✅');
-      alert('Registration successful!\nPlease check your email to verify your account.');
+      if (emailData.error) {
+        toast.update(loadingToast, { render: emailData.error, type: 'error', isLoading: false, autoClose: 3000 });
+        return;
+      }
 
+      toast.update(loadingToast, {
+        render: 'Account created! Check your email to verify ✅',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+
+      setMessage('');
     } catch (err) {
-      alert(String(err));
+      console.error(err);
+      toast.update(loadingToast, {
+        render: 'Something went wrong. Please try again.',
+        type: 'error',
+        isLoading: false,
+        autoClose: 3000,
+      });
     }
   }
+
 
   return (
     <div className="login-page-wrapper">

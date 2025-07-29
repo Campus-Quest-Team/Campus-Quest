@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import "../styles/Dashboard.css";
-import { isLoginValid, retrieveLogin } from "../loginStorage";
 import { useNavigate } from "react-router";
 
+import { isLoginValid, retrieveLogin } from "../loginStorage";
+
 import { DashboardSidebar } from "../components/dashboard/Sidebar";
-import { ProfileEdit } from "../components/dashboard/ProfileEdit";
 import { Feed } from "../components/dashboard/Feed";
+import { ProfileView } from "../components/dashboard/ProfileView";
+
+import "../styles/Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -25,14 +27,14 @@ function Dashboard() {
       {loginInfo && (
         <DashboardSidebar
           loginInfo={loginInfo}
-          onProfileChange={(_profile) => {
+          onProfileChange={() => {
             setShowEditPopup(true);
           }}
         />
       )}
       {loginInfo && <Feed {...loginInfo} />}
       {showEditPopup && (
-        <ProfileEdit
+        <ProfileView
           loginInfo={loginInfo}
           onClose={() => {
             setShowEditPopup(false);
