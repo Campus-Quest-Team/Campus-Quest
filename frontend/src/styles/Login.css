@@ -64,6 +64,7 @@ input[type="submit"],
   cursor: pointer;
   margin-top: 0.5rem;
   transition: background-color 0.3s ease;
+  text-shadow: 0 0 .05rem #000000ff
 }
 
 input[type="submit"]:hover,
@@ -77,11 +78,23 @@ input[type="submit"]:hover,
   background: none;
   border: none;
   color: #EFBF04;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 1rem;
   cursor: pointer;
   margin-top: 1rem;
+  padding: 0;
+  text-decoration: none;
+  font-family: 'Poppins', sans-serif;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+  text-shadow: 0 0 .05rem #000000ff
 }
+
+#registerRedirect:hover,
+#forgot-link:hover {
+  color: #d6a903;
+  text-decoration: underline;
+}
+
 
 /* Error & Info Messages */
 #loginResult,
@@ -92,6 +105,8 @@ input[type="submit"]:hover,
   display: block;
   font-size: 0.9rem;
 }
+
+
 
 .input-error {
   border: 2px solid red !important;
