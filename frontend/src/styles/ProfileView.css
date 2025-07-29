@@ -30,7 +30,7 @@
     border-radius: 0.75rem;
     width: 90vw;
     max-width: 720px;
-    max-height: 90vh;
+    max-height: 100vh;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     display: flex;
@@ -53,7 +53,7 @@
 }
 
 .profile-scroll-area.snap-enabled {
-    scroll-snap-type: y mandatory;
+    scroll-snap-type: y proximity;
 }
 
 .profile-posts-container>* {

@@ -14,12 +14,15 @@
 /* Scrollable post list with snap and hidden scrollbar */
 .scrollable-post-list {
     overflow-y: scroll;
-    scroll-snap-type: y mandatory;
+    scroll-snap-type: y proximity;
     scroll-behavior: smooth;
 
     scrollbar-width: none;
     /* Firefox */
     -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    /* momentum-style scrolling on iOS */
+
     /* IE and Edge */
 }
 

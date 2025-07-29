@@ -197,8 +197,8 @@ export function PostCard({
 
     return (
         <div className="post-card">
-            {!isProfileView && (
-                <div className="post-header">
+            <div className="post-header">
+                {!isProfileView && (
                     <div className="post-header-left">
                         <div className="profile-clickable" onClick={() => setProfileMenuOpen(prev => !prev)}>
                             <img src={pfp} alt="pfp" className="post-pfp" loading="lazy" />
@@ -208,7 +208,6 @@ export function PostCard({
                             <div className="profile-popup-menu">
                                 <button onClick={isFriendLocal ? handleRemoveFriend : handleAddFriend}>
                                     {isFriendLocal ? (
-
                                         <>
                                             <Suspense fallback={null}><MdPersonRemove /></Suspense> Remove Friend
                                         </>
@@ -221,12 +220,13 @@ export function PostCard({
                             </div>
                         )}
                     </div>
+                )}
 
-                    <div className="post-header-right">
-                        <ExpandableText text={title} />
-                    </div>
+                <div className="post-header-right">
+                    <ExpandableText text={title} />
                 </div>
-            )}
+            </div>
+
 
             <div className="post-image-wrapper">
                 {imageUrl ? (
@@ -239,12 +239,12 @@ export function PostCard({
                         <img
                             src={imageUrl}
                             alt="post"
-                            className="post-image"
+                            className={`post-image ${imageLoading ? 'hidden' : ''}`}
                             loading="lazy"
                             onLoad={() => setImageLoading(false)}
                             onError={() => setImageLoading(false)}
-                            style={imageLoading ? { display: 'none' } : {}}
                         />
+
                     </>
                 ) : (
                     <div className="post-image-placeholder">
