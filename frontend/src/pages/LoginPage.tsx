@@ -9,6 +9,7 @@ import type { LoginInfo, UserPayload } from '../types/APITypes';
 import fullLogo from '../assets/full_logo.svg';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { resetJWTErrorToast } from '../components/handleJWTError';
 const ForgotPasswordPopup = lazy(() => import('../components/login/ForgotPasswordPopup'));
 
 
@@ -54,7 +55,7 @@ function LoginPage() {
         userId: decoded.userId,
       };
       storeLogin(loginInfo);
-
+      resetJWTErrorToast();
       toast.success('Login successful!');
       setMessage('');
       navigate('/dashboard', { replace: true });

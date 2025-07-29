@@ -16,6 +16,9 @@ import type { PostCardProps } from "../../types/dashboardTypes";
 import buildPath from "../Path";
 import { MdMoreVert } from "react-icons/md";
 import { ExpandableText } from "../posts/ExpandableText"
+import { handleJWTError } from "../handleJWTError";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 
 export function PostCard({
@@ -35,10 +38,15 @@ export function PostCard({
     isFriend = false,
     friendId = "",
 }: PostCardProps) {
+    const navigate = useNavigate();
     const [likedState, setLikedState] = useState(liked);
     const [likeCount, setLikeCount] = useState(likes);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+    const [isFriendLocal, setIsFriendLocal] = useState(isFriend);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [captionState, setCaptionState] = useState(caption);
+
+
 
     function formatTime(date: Date): string {
         const now = new Date();
@@ -86,11 +94,13 @@ export function PostCard({
                 body: JSON.stringify({ userId, questPostId: postId, jwtToken }),
             });
             const data = await res.json();
+            if (handleJWTError(data, navigate)) return;
             if (res.ok && data.success) {
-                alert(data.needsReview ? "Post flagged. It now requires review." : "Post flagged successfully.");
+                toast.success(data.needsReview ? 'Post flagged for review' : 'Post flagged');
             } else {
-                console.error("Failed to flag post:", data);
+                toast.error('Failed to flag post');
             }
+
         } catch (err) {
             console.error("Flag post error:", err);
         } finally {
@@ -106,7 +116,14 @@ export function PostCard({
                 body: JSON.stringify({ userId, postId, jwtToken }),
             });
             const data = await res.json();
-            if (res.ok && data.success) onHide(postId);
+            if (handleJWTError(data, navigate)) return;
+            if (res.ok && data.success) {
+                onHide(postId);
+                toast.success('Post deleted!');
+            } else {
+                toast.error('Failed to delete post');
+            }
+
         } catch (err) {
             console.error("Delete post error:", err);
         } finally {
@@ -115,7 +132,7 @@ export function PostCard({
     };
 
     const handleEditCaption = async () => {
-        const newCaption = prompt("Enter new caption:", caption);
+        const newCaption = prompt("Enter new caption:", captionState);
         if (newCaption !== null) {
             try {
                 const res = await fetch(buildPath("api/editCaption"), {
@@ -124,12 +141,21 @@ export function PostCard({
                     body: JSON.stringify({ userId, postId, caption: newCaption, jwtToken }),
                 });
                 const data = await res.json();
-                if (res.ok && data.success) window.location.reload();
+                if (handleJWTError(data, navigate)) return;
+
+                if (res.ok && data.success) {
+                    setCaptionState(newCaption);
+                    toast.success("Caption updated!");
+                } else {
+                    toast.error("Failed to update caption");
+                }
             } catch (err) {
                 console.error("Edit caption error:", err);
+                toast.error("Error updating caption");
             }
         }
     };
+
 
     const handleAddFriend = async () => {
         try {
@@ -138,8 +164,13 @@ export function PostCard({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userId, friendId, jwtToken }),
             });
-            await res.json();
-            window.location.reload();
+            const data = await res.json();
+            if (handleJWTError(data, navigate)) return;
+            if (res.ok) {
+                setIsFriendLocal(true);
+                toast.success('Friend added!');
+
+            }
         } catch (err) {
             console.error("Add friend error:", err);
         }
@@ -152,8 +183,14 @@ export function PostCard({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userId, friendId, jwtToken }),
             });
-            await res.json();
-            window.location.reload();
+            const data = await res.json();
+            if (handleJWTError(data, navigate)) return;
+            if (res.ok) {
+                toast.warning('Friend Removed')
+                setIsFriendLocal(false);
+            }
+            console.log(data);
+
         } catch (err) {
             console.error("Remove friend error:", err);
         }
@@ -170,8 +207,9 @@ export function PostCard({
                         </div>
                         {profileMenuOpen && (
                             <div className="profile-popup-menu">
-                                <button onClick={isFriend ? handleRemoveFriend : handleAddFriend}>
-                                    {isFriend ? (
+                                <button onClick={isFriendLocal ? handleRemoveFriend : handleAddFriend}>
+                                    {isFriendLocal ? (
+
                                         <>
                                             <Suspense fallback={null}><MdPersonRemove /></Suspense> Remove Friend
                                         </>
@@ -213,12 +251,12 @@ export function PostCard({
                 <span className="like-count">{likeCount}</span>
 
                 {/* CAPTION MOVED HERE */}
-                {caption && (
+                {captionState && (
                     <div className="post-caption-inline">
-                        <ExpandableText text={`${formatTime(new Date(timeStamp))}: ${caption}`} />
+                        <ExpandableText text={`${formatTime(new Date(timeStamp))}: ${captionState}`} />
                     </div>
-
                 )}
+
 
                 {/* MENU BUTTON MOVED HERE */}
                 <div className="post-more-wrapper">
@@ -242,7 +280,11 @@ export function PostCard({
                                 </>
                             ) : (
                                 <>
-                                    <button onClick={() => onHide(postId)}>
+                                    <button onClick={() => {
+                                        onHide(postId);
+                                        toast.info('Post hidden');
+                                    }}>
+
                                         <span style={{ display: "flex", marginRight: 6 }}>
                                             <Suspense fallback={null}><MdVisibilityOff /></Suspense> Hide
                                         </span>
