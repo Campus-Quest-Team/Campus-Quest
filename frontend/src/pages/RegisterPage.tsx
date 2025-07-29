@@ -75,6 +75,9 @@ function RegisterPage() {
       email: registerEmail,
     };
 
+    // 👇 Add loading toast here
+    const loadingToast = toast.loading('Creating your account...');
+
     try {
       const res = await fetch(buildPath('api/register'), {
         method: 'POST',
@@ -83,8 +86,9 @@ function RegisterPage() {
       });
 
       const data = JSON.parse(await res.text());
+
       if (data.error) {
-        toast.error(data.error);
+        toast.update(loadingToast, { render: data.error, type: 'error', isLoading: false, autoClose: 3000 });
         return;
       }
 
@@ -103,16 +107,28 @@ function RegisterPage() {
       });
 
       const emailData = JSON.parse(await emailRes.text());
+
       if (emailData.error) {
-        toast.error(emailData.error);
+        toast.update(loadingToast, { render: emailData.error, type: 'error', isLoading: false, autoClose: 3000 });
         return;
       }
 
-      toast.success('Account created! Check your email to verify ✅');
+      toast.update(loadingToast, {
+        render: 'Account created! Check your email to verify ✅',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+
       setMessage('');
     } catch (err) {
       console.error(err);
-      toast.error('Something went wrong. Please try again.');
+      toast.update(loadingToast, {
+        render: 'Something went wrong. Please try again.',
+        type: 'error',
+        isLoading: false,
+        autoClose: 3000,
+      });
     }
   }
 
