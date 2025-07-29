@@ -45,8 +45,7 @@ export function PostCard({
     const [isFriendLocal, setIsFriendLocal] = useState(isFriend);
     const [menuOpen, setMenuOpen] = useState(false);
     const [captionState, setCaptionState] = useState(caption);
-
-
+    const [imageLoading, setImageLoading] = useState(true);
 
     function formatTime(date: Date): string {
         const now = new Date();
@@ -231,7 +230,22 @@ export function PostCard({
 
             <div className="post-image-wrapper">
                 {imageUrl ? (
-                    <img src={imageUrl} alt="post" className="post-image" loading="lazy" />
+                    <>
+                        {imageLoading && (
+                            <div className="image-loader">
+                                <div className="spinner" />
+                            </div>
+                        )}
+                        <img
+                            src={imageUrl}
+                            alt="post"
+                            className="post-image"
+                            loading="lazy"
+                            onLoad={() => setImageLoading(false)}
+                            onError={() => setImageLoading(false)}
+                            style={imageLoading ? { display: 'none' } : {}}
+                        />
+                    </>
                 ) : (
                     <div className="post-image-placeholder">
                         <Suspense fallback={null}><MdBrokenImage size={40} color="#aaa" /></Suspense>
@@ -239,6 +253,7 @@ export function PostCard({
                     </div>
                 )}
             </div>
+
 
             <div className="post-interaction">
                 <button className="like-btn" onClick={toggleLike} alt-text="Like Post">
