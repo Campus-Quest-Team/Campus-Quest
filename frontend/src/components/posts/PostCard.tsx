@@ -10,10 +10,13 @@ const MdFlag = lazy(() => import("react-icons/md").then(mod => ({ default: mod.M
 const MdPersonAdd = lazy(() => import("react-icons/md").then(mod => ({ default: mod.MdPersonAdd })));
 const MdPersonRemove = lazy(() => import("react-icons/md").then(mod => ({ default: mod.MdPersonRemove })));
 
+
 import '../../styles/PostCard.css';
 import type { PostCardProps } from "../../types/dashboardTypes";
 import buildPath from "../Path";
 import { MdMoreVert } from "react-icons/md";
+import { ExpandableText } from "../posts/ExpandableText"
+
 
 export function PostCard({
     user,
@@ -160,42 +163,32 @@ export function PostCard({
         <div className="post-card">
             {!isProfileView && (
                 <div className="post-header">
-                    <div className="profile-menu-wrapper">
+                    <div className="post-header-left">
                         <div className="profile-clickable" onClick={() => setProfileMenuOpen(prev => !prev)}>
                             <img src={pfp} alt="pfp" className="post-pfp" loading="lazy" />
                             <p className="post-user">{user}</p>
                         </div>
-
                         {profileMenuOpen && (
                             <div className="profile-popup-menu">
                                 <button onClick={isFriend ? handleRemoveFriend : handleAddFriend}>
-                                    {isFriend ? <><Suspense fallback={null}><MdPersonRemove /></Suspense> Remove Friend</> : <><Suspense fallback={null}><MdPersonAdd /></Suspense> Add Friend</>}
+                                    {isFriend ? (
+                                        <>
+                                            <Suspense fallback={null}><MdPersonRemove /></Suspense> Remove Friend
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Suspense fallback={null}><MdPersonAdd /></Suspense> Add Friend
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         )}
                     </div>
 
-                    <div className="post-more-wrapper">
-                        <button className="post-more" onClick={() => setMenuOpen(prev => !prev)} about="More Options">
-                            <MdMoreVert size={22} color="#666" />
-                        </button>
-                        {menuOpen && (
-                            <div className="more-menu">
-                                <button onClick={() => onHide(postId)}>
-                                    <span style={{ marginRight: 6 }}>
-                                        <Suspense fallback={null}><MdVisibilityOff /></Suspense> Hide
-                                    </span>
-                                </button>
-                                <button onClick={handleFlag}>
-                                    <span style={{ marginRight: 6 }}>
-                                        <Suspense fallback={null}><MdFlag /></Suspense> Flag
-                                    </span>
-                                </button>
-                            </div>
-                        )}
+                    <div className="post-header-right">
+                        <ExpandableText text={title} />
                     </div>
                 </div>
-
             )}
 
             <div className="post-image-wrapper">
@@ -205,27 +198,6 @@ export function PostCard({
                     <div className="post-image-placeholder">
                         <Suspense fallback={null}><MdBrokenImage size={40} color="#aaa" /></Suspense>
                         <span>Image Not Available</span>
-                    </div>
-                )}
-                {isProfileView && (
-                    <div className="post-image-overlay">
-                        <button className="post-more" onClick={() => setMenuOpen(prev => !prev)} alt-text="More Options">
-                            <MdMoreVert size={22} color="#000" />
-                        </button>
-                        {menuOpen && (
-                            <div className="more-menu">
-                                <button onClick={handleEditCaption} alt-text="Edit Caption">
-                                    <span style={{ marginRight: 6 }}>
-                                        <Suspense fallback={null}><MdEdit /></Suspense>Edit
-                                    </span>
-                                </button>
-                                <button onClick={handleDelete} alt-text="Delete Post">
-                                    <span style={{ marginRight: 6 }}>
-                                        <Suspense fallback={null}><MdDelete /></Suspense>Delete
-                                    </span>
-                                </button>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
@@ -239,17 +211,54 @@ export function PostCard({
                     )}
                 </button>
                 <span className="like-count">{likeCount}</span>
-                <p className="post-title-text">{title}</p>
-            </div>
 
-            {
-                caption && (
-                    <div className="post-caption">
-                        <span className="post-time">[{formatTime(new Date(timeStamp))}]</span>{" "}
-                        <span>{caption}</span>
+                {/* CAPTION MOVED HERE */}
+                {caption && (
+                    <div className="post-caption-inline">
+                        <ExpandableText text={`${formatTime(new Date(timeStamp))} ${caption}`} />
                     </div>
-                )
-            }
+
+                )}
+
+                {/* MENU BUTTON MOVED HERE */}
+                <div className="post-more-wrapper">
+                    <button className="post-more" onClick={() => setMenuOpen(prev => !prev)} about="More Options">
+                        <MdMoreVert size={22} color="#666" />
+                    </button>
+                    {menuOpen && (
+                        <div className="more-menu">
+                            {isProfileView ? (
+                                <>
+                                    <button onClick={() => onHide(postId)}>
+                                        <span style={{ marginRight: 6 }}>
+                                            <Suspense fallback={null}><MdVisibilityOff /></Suspense> Hide
+                                        </span>
+                                    </button>
+                                    <button onClick={handleFlag}>
+                                        <span style={{ marginRight: 6 }}>
+                                            <Suspense fallback={null}><MdFlag /></Suspense> Flag
+                                        </span>
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button onClick={handleEditCaption}>
+                                        <span style={{ marginRight: 6 }}>
+                                            <Suspense fallback={null}><MdEdit /></Suspense> Edit
+                                        </span>
+                                    </button>
+                                    <button onClick={handleDelete}>
+                                        <span style={{ marginRight: 6 }}>
+                                            <Suspense fallback={null}><MdDelete /></Suspense> Delete
+                                        </span>
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                </div>
+            </div>
         </div >
     );
 }
