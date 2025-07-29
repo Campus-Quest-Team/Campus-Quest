@@ -4,25 +4,35 @@
   margin: 0;
   padding: 0;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Logo styles with responsive size */
 .logo {
-  height: 6em;
-  padding: 1.5em;
+  height: clamp(3rem, 10vw, 6rem);
+  /* responsive scaling */
+  padding: 1rem;
   will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  transition: filter 300ms ease;
 }
 
+.logo:hover {
+  filter: drop-shadow(0 0 1rem #646cffaa);
+}
+
+.logo.react:hover {
+  filter: drop-shadow(0 0 1rem #61dafbaa);
+}
+
+/* Animation for logo (spins unless reduced motion is preferred) */
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -34,10 +44,20 @@
   }
 }
 
+/* Card with responsive padding */
 .card {
-  padding: 2em;
+  padding: clamp(1rem, 4vw, 2rem);
+  margin: 1rem;
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 90%;
+  box-sizing: border-box;
 }
 
+/* Documentation text */
 .read-the-docs {
   color: #888;
+  font-size: clamp(0.8rem, 1.2vw, 1rem);
+  margin-top: 1rem;
 }

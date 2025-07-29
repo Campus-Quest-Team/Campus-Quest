@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
-import { storeLogin } from '../loginStorage';
+import React, { useState, lazy, Suspense } from 'react';
+import buildPath from '../components/Path';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
-import buildPath from '../components/Path';
+
+import { storeLogin } from '../loginStorage';
 import '../styles/Login.css';
 import type { LoginInfo, UserPayload } from '../types/APITypes';
 import fullLogo from '../assets/full_logo.svg';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { resetJWTErrorToast } from '../components/handleJWTError';
+const ForgotPasswordPopup = lazy(() => import('../components/login/ForgotPasswordPopup'));
+
 
 function LoginPage() {
   const [message, setMessage] = useState('');
@@ -15,7 +19,6 @@ function LoginPage() {
   const [loginPassword, setLoginPassword] = useState('');
   const navigate = useNavigate();
   const [showForgotPopup, setShowForgotPopup] = useState(false);
-  const ForgotPasswordPopup = React.lazy(() => import('../components/login/ForgotPasswordPopup'));
 
   async function doLogin(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -52,7 +55,7 @@ function LoginPage() {
         userId: decoded.userId,
       };
       storeLogin(loginInfo);
-
+      resetJWTErrorToast();
       toast.success('Login successful!');
       setMessage('');
       navigate('/dashboard', { replace: true });
@@ -85,8 +88,11 @@ function LoginPage() {
           </button>
         </div>
 
-        {showForgotPopup && <ForgotPasswordPopup onClose={() => setShowForgotPopup(false)} />}
-      </div>
+        {showForgotPopup && (
+          <Suspense fallback={<div>Loading...</div>}>
+            <ForgotPasswordPopup onClose={() => setShowForgotPopup(false)} />
+          </Suspense>
+        )}</div>
     </div>
   );
 }

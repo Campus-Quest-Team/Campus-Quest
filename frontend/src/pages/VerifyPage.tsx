@@ -3,6 +3,7 @@ import { jwtDecode } from 'jwt-decode';
 import type { UserPayload } from '../types/APITypes';
 import buildPath from '../components/Path';
 import '../styles/Verify.css';
+import { toast } from 'react-toastify';
 
 function VerifyPage() {
     const [message, setMessage] = useState(''); // used to give user a response
@@ -37,7 +38,7 @@ function VerifyPage() {
             }
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            alert(msg);
+            toast.error(msg);
             return;
         }
 

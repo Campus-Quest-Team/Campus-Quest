@@ -1,75 +1,88 @@
 :root {
   font-family: 'Anuphan', 'Poppins', sans-serif;
-  line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  line-height: 1.5;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
 }
 
-
-/* General Layout */
-body, html {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: 'Anuphan', sans-serif;
-  background: linear-gradient(135deg, #EFBF04, #ceba6b);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-input {
-  font-family: 'Poppins', sans-serif;
-  font-size: 18px;
-  padding: 12px;
-  margin-bottom: 16px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-}
-
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
-html, body, #root {
+/* Global layout */
+html,
+body,
+#root {
   margin: 0;
   padding: 0;
   height: 100%;
   width: 100%;
-  overflow: hidden; /* prevents scrollbars */
+  overflow: hidden;
+  font-family: 'Anuphan', 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #EFBF04, #ceba6b);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
 }
 
+/* Typography */
+h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.2;
+  margin: 0.5em 0;
+}
+
+/* Form Elements */
+input {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(1rem, 1.5vw, 1.125rem);
+  padding: clamp(0.6rem, 2vw, 0.75rem);
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Buttons */
+button {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  padding: clamp(0.5rem, 1.5vw, 0.75rem);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  border: none;
+}
+
+/* Button group */
 .button-row {
   display: flex;
   justify-content: space-between;
-  gap: 15px;
-  margin-top: 20px;
+  gap: clamp(0.5rem, 3vw, 1rem);
+  margin-top: clamp(1rem, 3vh, 1.5rem);
   width: 100%;
 }
 
 .button-row button {
   flex: 1;
-  padding: 10px;
+}
+
+/* Light mode override */
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+
+  a:hover {
+    color: #747bff;
+  }
+
+  button {
+    background-color: #f9f9f9;
+  }
 }

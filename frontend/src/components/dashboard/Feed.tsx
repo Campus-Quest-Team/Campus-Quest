@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import buildPath from "../Path";
-import type { FeedPost, FeedResponse } from "../../types/dashboardTypes";
-import type { LoginInfo } from "../../types/APITypes";
+import type { FeedPost } from "../../types/dashboardTypes";
+import type { LoginInfo, FeedResponse } from "../../types/APITypes";
 import '../../styles/Feed.css';
 import { PostCard } from "../posts/PostCard";
 import { toast } from "react-toastify";
@@ -15,7 +15,7 @@ interface Friend {
     questCompleted: number;
 }
 
-const POSTS_PER_BATCH = 5;
+const POSTS_PER_BATCH = 2;
 
 export function Feed(loginInfo: LoginInfo) {
     const [feed, setFeed] = useState<FeedPost[]>([]);

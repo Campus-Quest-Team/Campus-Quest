@@ -1,13 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import buildPath from "../Path";
-import type { ProfileData, ProfileEditProps, ProfileResponse } from "../../types/dashboardTypes";
+import type { PopupProps, ProfileData } from "../../types/dashboardTypes";
 import { useNavigate } from "react-router-dom";
 import { clearToken } from "../../loginStorage";
 import { FiCamera, FiEdit3, FiBell } from "react-icons/fi";
 import { toast } from "react-toastify";
 import '../../styles/Settings.css';
+import type { ProfileResponse } from "../../types/APITypes";
+import { MdCancel, MdCheck } from "react-icons/md";
 
-export function Settings({ loginInfo, onClose }: ProfileEditProps) {
+interface SettingsProps extends PopupProps {
+    onProfileUpdate: () => void;
+}
+
+
+export function Settings({ loginInfo, onClose, onProfileUpdate }: SettingsProps) {
     const navigate = useNavigate();
     const [bio, setBio] = useState('');
     const [displayName, setDisplayName] = useState('');
@@ -28,9 +35,7 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
         }
     }
 
-    const handleEditSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
+    const handleEditSubmit = async () => {
         // Save display name and bio
         try {
             const res = await fetch(buildPath('api/editProfile'), {
@@ -47,6 +52,8 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
             const data = await res.json();
             if (res.ok && data.success) {
                 toast.success("Profile details updated successfully!");
+                onProfileUpdate();
+                onClose();
             } else {
                 toast.error("Failed to update profile details.");
             }
@@ -69,6 +76,7 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
                 const data = await res.json();
                 if (res.ok && data.success) {
                     toast.success("Profile picture updated successfully!");
+                    onProfileUpdate();
                 } else {
                     toast.error("Failed to update profile picture.");
                 }
@@ -77,6 +85,7 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
             }
         }
     };
+
 
     const handleToggleNotifications = async () => {
         const payload = {
@@ -140,12 +149,19 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
     }, [loginInfo, navigate]);
 
     return (
-        <div className="settings-popup-container">
-            <div className="settings-sidebar-panel">
+        <div className="settings-overlay-backdrop" onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
+        }}>
+            <div className="settings-popup-container">
+                <div className="settings-popup-header">
+                    <button onClick={onClose} className="settings-icon-button cancel" title="Cancel"><MdCancel /></button>
+                    <button onClick={handleEditSubmit} className="settings-icon-button save" title="Save"><MdCheck /></button>
+                </div>
                 <div className="settings-editable-avatar" onClick={() => fileInputRef.current?.click()}>
                     <img src={pfpPreview || profile?.pfp || 'default-profile.png'} alt="Profile" />
                     <div className="settings-avatar-overlay-icon"><FiCamera /></div>
                     <input
+                        autoFocus={true}
                         type="file"
                         accept="image/*"
                         ref={fileInputRef}
@@ -157,16 +173,18 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
                 <div className="settings-editable-field editable-hover">
                     {isEditingName ? (
                         <input
+                            autoFocus={true}
                             type="text"
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             onBlur={() => setIsEditingName(false)}
-                            autoFocus
                         />
                     ) : (
-                        <span onClick={() => setIsEditingName(true)}>
-                            {displayName || 'Your Name'} <span className="settings-edit-icon"><FiEdit3 /></span>
+                        <span className="settings-edit-wrapper" onClick={() => setIsEditingName(true)}>
+                            <span className="settings-edit-text">{displayName || 'Your Name'}</span>
+                            <span className="settings-edit-icon" > <FiEdit3 /> </span>
                         </span>
+
                     )}
                 </div>
 
@@ -179,9 +197,10 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
                             autoFocus
                         />
                     ) : (
-                        <p onClick={() => setIsEditingBio(true)}>
-                            {bio || 'Your bio here...'} <span className="settings-edit-icon"><FiEdit3 /></span>
-                        </p>
+                        <span className="settings-edit-wrapper" onClick={() => setIsEditingBio(true)}>
+                            <span className="settings-edit-text">{bio || 'Your bio here...'}</span>
+                            <span className="settings-edit-icon" > <FiEdit3 /> </span>
+                        </span>
                     )}
                 </div>
 
@@ -198,12 +217,8 @@ export function Settings({ loginInfo, onClose }: ProfileEditProps) {
                     </div>
                 </div>
 
-                <div className="settings-action-buttons">
-                    <button onClick={onClose}>Cancel</button>
-                    <button onClick={handleEditSubmit}>Save Changes</button>
-                </div>
                 <button className="settings-logout-btn" onClick={handleLogout}>
-                    🚪 Logout
+                    Logout
                 </button>
             </div>
         </div>

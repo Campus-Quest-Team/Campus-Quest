@@ -3,42 +3,50 @@ import buildPath from '../Path';
 import { useNavigate } from 'react-router-dom';
 import fullLogo from '../../assets/full_logo.svg';
 import { FaTrophy } from 'react-icons/fa';
-import { MdGroup } from 'react-icons/md';
-import { MdTrackChanges } from 'react-icons/md';
-import { MdCheckCircle, MdCancel } from 'react-icons/md';
-import { FaBinoculars } from 'react-icons/fa';
+import { MdPerson, MdGroup, MdTrackChanges, MdCheckCircle, MdCancel } from 'react-icons/md';
 import '../../styles/Sidebar.css';
 import { toast } from 'react-toastify';
-
-
-// types
+import type { LoginInfo, FriendsResponse, LeaderboardResponse, ProfileResponse } from '../../types/APITypes';
 import type {
-    FriendsResponse,
-    LeaderboardResponse,
     FriendData,
     LeaderboardEntry,
     ProfileData,
-    ProfileResponse,
-    SidebarProps
 } from '../../types/dashboardTypes';
 import { handleJWTError } from '../handleJWTError';
 
-export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
+export function DashboardSidebar({ loginInfo, onProfileChange }: {
+    loginInfo: LoginInfo;
+    onProfileChange: () => void;
+}) {
     const navigate = useNavigate();
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [friends, setFriends] = useState<FriendData[]>([]);
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [hasCompletedToday, setHasCompletedToday] = useState<boolean | null>(null);
+    const [currentQuest, setCurrentQuest] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Current Quest
+                const questRes = await fetch(buildPath('api/currentQuest'), {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const questData = await questRes.json();
+                if (questRes.ok && questData.success) {
+                    setCurrentQuest(questData.currentQuest.questData.questDescription);
+
+                }
+
                 // Profile
                 const profileRes = await fetch(buildPath('api/getProfile'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${loginInfo.accessToken}`,
                     },
                     body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
                 });
@@ -65,7 +73,6 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${loginInfo.accessToken}`,
                     },
                     body: JSON.stringify({ jwtToken: loginInfo.accessToken }),
                 });
@@ -107,92 +114,111 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
             <div className="logo-wrapper">
                 <img src={fullLogo} alt="Campus Quest Logo" className="campus-quest-logo" />
             </div>
+            <div className="sidebar-content">
+                {/* Profile */}
+                <div className="profile-section">
+                    <div className="profile-top-row">
+                        <div className="profile-picture-wrapper">
+                            <img
+                                src={profile?.pfp || 'default-profile.png'}
+                                alt="Profile"
+                                className="profile-img"
+                            />
+                            <div
+                                className="edit-icon"
+                                onClick={() => profile && onProfileChange()}
+                                style={{ cursor: profile ? 'pointer' : 'not-allowed' }}
+                            >
+                                <MdPerson size={18} />
 
-            {/* Profile */}
-            <div className="profile-section">
-                <div className="profile-picture-wrapper">
-                    <img
-                        src={profile?.pfp || 'default-profile.png'}
-                        alt="Profile"
-                        className="profile-img"
-                    />
-                    <div
-                        className="edit-icon"
-                        onClick={() => profile && onProfileChange()}
-                        style={{ cursor: profile ? 'pointer' : 'not-allowed' }}
-                    >
-                        <FaBinoculars size={18} />
-                    </div>
+                            </div>
+                        </div>
 
-
-                </div>
-
-                <div className="stats">
-                    <div className="stat-item">
-                        <div className="stat-number">{friends.length}</div>
-                        <div className="stat-label">Friends</div>
-                    </div>
-                    <div className="stat-item">
-                        <div className="stat-number">{profile?.questCompleted ?? 0}</div>
-                        <div className="stat-label">Quests Complete</div>
-                    </div>
-                    <div className="stat-item">
-                        {hasCompletedToday === null ? (
-                            <span>⏳</span>
-                        ) : hasCompletedToday ? (
-                            <MdCheckCircle color="green" size={20} title="Complete" />
-                        ) : (
-                            <MdCancel color="crimson" size={20} title="Incomplete" />
-                        )}
-                        <div className="stat-label">Today's Quest</div>
+                        <div className="stats">
+                            <div className="stat-item">
+                                <div className="stat-number">{friends.length}</div>
+                                <div className="stat-label"><MdGroup /> Friends</div>
+                            </div>
+                            <div className="stat-item">
+                                <div className="stat-number">{profile?.questCompleted ?? 0}</div>
+                                <div className="stat-label"><MdTrackChanges /> Done</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Friend Leaderboard */}
-            <div className="friends-section">
-                <h2>
-                    <span style={{ verticalAlign: 'middle', marginRight: '6px' }}>
-                        <MdGroup />
-                    </span>
-                    Friends
-                </h2>
 
-                {friends.length === 0 ? (
-                    <p>No friends added yet.</p>
-                ) : (
-                    [...friends]
-                        .sort((a, b) => b.questCompleted - a.questCompleted)
-                        .map((friend, index) => (
-                            <div key={`${friend.displayName}-${index}`} className="friend-entry">
-                                <img src={friend.pfp} alt={`${friend.displayName}'s profile`} className="friend-pfp" />
-                                <span>
-                                    {friend.questCompleted} <MdTrackChanges size={12} /> {friend.displayName}
+                {/* Current Quest Section */}
+                {
+                    currentQuest && (
+                        <div className="current-quest-section">
+                            <h2>
+                                <span style={{ verticalAlign: 'middle', marginRight: '6px' }}>
+                                    <MdTrackChanges />
                                 </span>
-                            </div>
-                        ))
+                                Current Quest
+                            </h2>
+                            <p className="quest-description">
+                                {hasCompletedToday === null ? (
+                                    <span className="quest-icon">⏳</span>
+                                ) : hasCompletedToday ? (
+                                    <MdCheckCircle color="green" size={16} title="Complete" />
+                                ) : (
+                                    <MdCancel color="crimson" size={16} title="Incomplete" />
+                                )}
+                                <span>{currentQuest}</span>
+                            </p>
 
-                )}
-            </div>
+                        </div>
+                    )
+                }
 
-            {/* Global Leaderboard */}
-            <div className="leaderboard-section">
-                <h2><span style={{ paddingTop: '2px', marginRight: '6px' }}><FaTrophy /></span>Leaderboard</h2>
 
-                {leaderboard.length === 0 ? (
-                    <p>Loading leaderboard...</p>
-                ) : (
-                    leaderboard
-                        .sort((a, b) => b.questCompleted - a.questCompleted)
-                        .slice(0, 5)
-                        .map((entry, i) => (
-                            <div key={entry.userId} className="leaderboard-entry">
-                                <span className="leaderboard-rank">#{i + 1}</span> –{' '}
-                                <span className="leaderboard-quests"><strong>{entry.questCompleted}</strong> <MdTrackChanges size={10} /></span>{' '}
-                                <span className="leaderboard-name">{entry.displayName}</span>
-                            </div>
-                        ))
-                )}
+                {/* Friend Leaderboard */}
+                <div className="friends-section">
+                    <h2>
+                        <span style={{ verticalAlign: 'middle', marginRight: '6px' }}>
+                            <MdGroup />
+                        </span>
+                        Friends
+                    </h2>
+
+                    {friends.length === 0 ? (
+                        <p>No friends added yet.</p>
+                    ) : (
+                        [...friends]
+                            .sort((a, b) => b.questCompleted - a.questCompleted)
+                            .map((friend, index) => (
+                                <div key={`${friend.displayName}-${index}`} className="friend-entry">
+                                    <img src={friend.pfp} alt={`${friend.displayName}'s profile`} className="friend-pfp" />
+                                    <span>
+                                        {friend.questCompleted} <MdTrackChanges size={12} /> {friend.displayName}
+                                    </span>
+                                </div>
+                            ))
+
+                    )}
+                </div>
+
+                {/* Global Leaderboard */}
+                <div className="leaderboard-section">
+                    <h2><span style={{ paddingTop: '2px', marginRight: '6px' }}><FaTrophy /></span>Leaderboard</h2>
+
+                    {leaderboard.length === 0 ? (
+                        <p>Loading leaderboard...</p>
+                    ) : (
+                        leaderboard
+                            .sort((a, b) => b.questCompleted - a.questCompleted)
+                            .slice(0, 5)
+                            .map((entry, i) => (
+                                <div key={entry.userId} className="leaderboard-entry">
+                                    <span className="leaderboard-rank">#{i + 1}</span> –{' '}
+                                    <span className="leaderboard-quests"><strong>{entry.questCompleted}</strong> <MdTrackChanges size={10} /></span>{' '}
+                                    <span className="leaderboard-name">{entry.displayName}</span>
+                                </div>
+                            ))
+                    )}
+                </div>
             </div>
         </div >
     );

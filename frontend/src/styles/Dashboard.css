@@ -1,78 +1,25 @@
-/* Root layout */
 .dashboard-container {
   display: flex;
-  height: 100%;
-  width: 100%;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 100vh;
+  /* full viewport height */
+  width: 100vw;
+  /* full viewport width */
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   overflow: hidden;
   font-family: sans-serif;
   color: black;
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  /* dynamic font size */
 }
 
-/* Post Header */
-.post-header {
-  display: flex;
-  justify-content: space-between;
-  font-weight: bold;
-}
-
-/* Post Title */
-.post-title {
-  text-transform: uppercase;
-}
-
-/* Post Image */
-.post-image {
-  width: 100%;
-  height: auto;
-  margin: 10px 0;
-  border-radius: 6px;
-}
-
-/* Post Footer */
-.post-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* Flag Button */
-.flag-btn {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-/* Stats Grid */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0px;
-  margin-top: 20px;
-}
-
-.stat-item {
-  text-align: center;
-  padding: 0;
-}
-
-.stat-number {
-  font-size: 1.5rem;
-  font-weight: bold;
-}
-
-.stat-label {
-  font-size: 0.7rem;
-  color: #555;
-}
-
-/* Quests Section */
-.quests-section {
-  background-color: grey;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+/* Optional: handle smaller viewports with column layout */
+@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: column;
+    overflow-y: auto;
+  }
 }

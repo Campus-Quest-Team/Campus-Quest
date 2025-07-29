@@ -9,13 +9,16 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    padding: 1rem;
+    box-sizing: border-box;
 }
 
 .profile-modal-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 32px;
+    gap: clamp(1rem, 4vw, 2rem);
+    flex-wrap: wrap;
 }
 
 .profile-modal-wrapper.with-settings {
@@ -24,14 +27,15 @@
 
 .profile-main-modal {
     background-color: #EFBF04;
-    border-radius: 10px;
+    border-radius: 0.75rem;
     width: 90vw;
     max-width: 720px;
-    max-height: 90vh;
+    max-height: 100vh;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
 }
 
 .profile-settings-toggle-btn {
@@ -39,6 +43,7 @@
     border: none;
     padding: 0;
     cursor: pointer;
+    color: #333;
 }
 
 .profile-scroll-area {
@@ -49,16 +54,15 @@
 }
 
 .profile-scroll-area.snap-enabled {
-    scroll-snap-type: y mandatory;
+    scroll-snap-type: y proximity;
 }
 
 .profile-posts-container>* {
     scroll-snap-align: start;
 }
 
-
 .profile-header-bar {
-    padding: 20px 24px 0 24px;
+    padding: clamp(1rem, 4vw, 1.25rem);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -67,29 +71,42 @@
 
 .profile-user-info {
     display: flex;
-    gap: 16px;
     align-items: center;
-    padding: 0 24px 20px 24px;
+    gap: clamp(0.75rem, 3vw, 1rem);
+    padding: 0 clamp(1rem, 4vw, 1.5rem) clamp(1.25rem, 3vh, 1.5rem);
 }
 
+/* This is the div that wraps the name and bio text */
+.profile-user-info>div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Left-align the text inside */
+    justify-content: center;
+    text-align: left;
+    flex: 1;
+}
+
+
 .profile-avatar-img {
-    width: 80px;
-    height: 80px;
+    width: clamp(64px, 10vw, 80px);
+    height: clamp(64px, 10vw, 80px);
     border-radius: 50%;
     object-fit: cover;
     background-color: #eee;
 }
 
 .profile-no-posts-message {
-    padding: 20px;
+    padding: clamp(1rem, 4vw, 1.5rem);
     text-align: center;
+    font-size: clamp(0.9rem, 1.2vw, 1rem);
 }
 
 .profile-posts-container {
     display: flex;
     flex-direction: column;
-    gap: 40px;
-    padding: 0 24px 24px 24px;
+    gap: clamp(1.5rem, 4vh, 2.5rem);
+    padding: 0 clamp(1rem, 4vw, 1.5rem) clamp(1.5rem, 4vh, 2rem);
 }
 
 .profile-posts-container>* {

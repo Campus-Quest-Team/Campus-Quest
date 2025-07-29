@@ -6,17 +6,17 @@ import { FiSettings } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import type {
     FeedPost,
+    PopupProps,
     ProfileData,
-    ProfileEditProps,
-    ProfileResponse,
 } from '../../types/dashboardTypes';
 import '../../styles/ProfileView.css';
 import { Settings } from './Settings';
 import { handleJWTError } from '../handleJWTError';
+import type { ProfileResponse } from '../../types/APITypes';
 
 const POSTS_PER_BATCH = 4;
 
-export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
+export function ProfileView({ loginInfo, onClose }: PopupProps) {
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [posts, setPosts] = useState<FeedPost[]>([]);
     const [visibleCount, setVisibleCount] = useState(POSTS_PER_BATCH);
@@ -73,8 +73,7 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
             if (el) observer.unobserve(el);
         };
     }, [loadMore]);
-
-    useEffect(() => {
+    const refreshProfile = useCallback(() => {
         fetch(buildPath('api/getProfile'), {
             method: 'POST',
             headers: {
@@ -89,7 +88,6 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
             .then(res => res.json())
             .then((data: ProfileResponse | { error: string }) => {
                 if (handleJWTError(data, navigate)) return;
-
                 const profileData = (data as ProfileResponse).profileData;
                 setProfile(profileData);
                 setPosts((profileData.questPosts || []).map(qp => ({
@@ -109,7 +107,11 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
                 console.error('Profile fetch error:', err);
                 toast.error("Server error while loading profile.");
             });
-    }, [loginInfo, navigate]);
+    }, [loginInfo.userId, loginInfo.accessToken, navigate]);
+
+    useEffect(() => {
+        refreshProfile();
+    }, [refreshProfile]);
 
     const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
@@ -126,7 +128,7 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
                     <div className="profile-main-modal">
                         <div className="profile-scroll-area" ref={scrollRef}>
                             <div className="profile-header-bar">
-                                <h2 style={{ margin: 0 }}>Your Profile</h2>
+                                <h2 style={{ margin: 0, fontSize: 30 }}>Your Profile</h2>
                                 <button
                                     onClick={() => setShowSettings(prev => !prev)}
                                     className="profile-settings-toggle-btn"
@@ -189,9 +191,14 @@ export function ProfileView({ loginInfo, onClose }: ProfileEditProps) {
 
                 {showSettings && (
                     <div className="settings-wrapper">
-                        <Settings loginInfo={loginInfo} onClose={() => setShowSettings(false)} />
+                        <Settings
+                            loginInfo={loginInfo}
+                            onClose={() => setShowSettings(false)}
+                            onProfileUpdate={refreshProfile} // <- pass here
+                        />
                     </div>
                 )}
+
             </div>
         </div>
     );
