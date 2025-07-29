@@ -37,7 +37,6 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: {
                 });
 
                 const questData = await questRes.json();
-                console.log(questData);
                 if (questRes.ok && questData.success) {
                     setCurrentQuest(questData.currentQuest.questData.questDescription);
 
