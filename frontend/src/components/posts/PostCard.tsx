@@ -107,7 +107,7 @@ export function PostCard({
         }
     };
 
-    const handleDelete = async () => {
+    const confirmDeletePost = async () => {
         try {
             const res = await fetch(buildPath("api/deletePost"), {
                 method: "POST",
@@ -118,17 +118,51 @@ export function PostCard({
             if (handleJWTError(data, navigate)) return;
             if (res.ok && data.success) {
                 onHide(postId);
+                toast.dismiss(); // Close the confirm toast
                 toast.success('Post deleted!');
             } else {
                 toast.error('Failed to delete post');
             }
-
         } catch (err) {
             console.error("Delete post error:", err);
+            toast.error('Error deleting post');
         } finally {
             setMenuOpen(false);
         }
     };
+
+
+    const handleDelete = () => {
+        toast.info(
+            ({ closeToast }) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <span>Are you sure you want to delete this post?</span>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                        <button
+                            onClick={() => {
+                                confirmDeletePost();
+                            }}
+                            style={{ padding: '4px 8px', backgroundColor: '#d33', color: 'white', border: 'none', borderRadius: 4 }}
+                        >
+                            Delete
+                        </button>
+                        <button
+                            onClick={closeToast}
+                            style={{ padding: '4px 8px', backgroundColor: '#ccc', color: 'black', border: 'none', borderRadius: 4 }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            ),
+            {
+                autoClose: false,
+                closeOnClick: false,
+                draggable: false,
+            }
+        );
+    };
+
 
     const handleEditCaption = async () => {
         const newCaption = prompt("Enter new caption:", captionState);
