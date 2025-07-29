@@ -1,21 +1,23 @@
 #verifyDiv {
   background-color: white;
-  padding: 40px;
-  border-radius: 12px;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  border-radius: 0.75rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   width: 90%;
   max-width: 500px;
-  margin: 100px auto;
+  margin: clamp(2rem, 10vh, 6rem) auto;
   text-align: center;
   font-family: 'Anuphan', 'Poppins', sans-serif;
+  box-sizing: border-box;
 }
 
 #inner-title {
-  font-size: 3rem;
+  font-size: clamp(2rem, 5vw, 3rem);
   font-weight: bold;
+  margin-bottom: 1rem;
 }
 
 #verifyResult {
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 2vw, 1.1rem);
   color: #555;
 }

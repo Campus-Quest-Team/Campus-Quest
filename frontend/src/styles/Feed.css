@@ -1,27 +1,24 @@
-/* Feed */
+/* Feed container that stretches to viewport height */
 .feed {
     flex: 1;
     height: 100vh;
-    /* stretch to viewport height */
-    padding: 20px;
+    padding: clamp(1rem, 4vw, 2rem);
     box-sizing: border-box;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* center posts horizontally */
-    gap: 20px;
-    /* optional: light background for contrast */
+    gap: clamp(1rem, 2vh, 1.5rem);
+    /* Optional light background */
 }
 
+/* Scrollable post list with snap and hidden scrollbar */
 .scrollable-post-list {
     height: 100vh;
-    /* or a fixed height like 80vh */
     overflow-y: scroll;
     scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
 
-    /* Hide scrollbar (Webkit + Firefox) */
     scrollbar-width: none;
     /* Firefox */
     -ms-overflow-style: none;
@@ -33,15 +30,31 @@
     /* Chrome, Safari */
 }
 
-/* Current Quest */
+/* Current Quest Section */
 .current-quest-section {
-    margin-top: 12px;
-    padding: 12px;
+    margin-top: clamp(0.5rem, 2vh, 1rem);
+    padding: clamp(0.75rem, 2vw, 1.25rem);
     background: #fff8dc;
-    border-radius: 10px;
+    border-radius: 0.625rem;
     font-family: 'Poppins', sans-serif;
+    width: 100%;
+    max-width: 700px;
+    box-sizing: border-box;
 }
 
-.current-quest p {
-    margin: 8px 0;
+.current-quest-section p {
+    margin: 0.5rem 0;
+    font-size: clamp(0.9rem, 1.2vw, 1rem);
+}
+
+/* Quests Section */
+.quests-section {
+    background-color: #aaa;
+    padding: clamp(0.5rem, 2vw, 1rem);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 700px;
+    box-sizing: border-box;
+    font-size: clamp(0.9rem, 1.1vw, 1rem);
 }
