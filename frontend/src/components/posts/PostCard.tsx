@@ -18,7 +18,7 @@ import { MdMoreVert } from "react-icons/md";
 import { ExpandableText } from "../posts/ExpandableText"
 import { handleJWTError } from "../handleJWTError";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, type ToastContentProps } from "react-toastify";
 
 
 export function PostCard({
@@ -134,7 +134,7 @@ export function PostCard({
 
     const handleDelete = () => {
         toast.info(
-            ({ closeToast }) => (
+            ({ closeToast }: ToastContentProps) => (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <span>Are you sure you want to delete this post?</span>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
