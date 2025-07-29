@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -35,19 +32,21 @@ jobs:
         run: |
           sshpass -p "${SSH_KEY}" ssh -o StrictHostKeyChecking=no ${SSH_USERNAME}@${SSH_HOST} << 'EOF'
           cd /var/repo-dump/Campus-Quest
+          sudo git fetch
           sudo git pull origin main
           sudo npm install
           sed '8 s/nodemon/node/' package.json
           echo "${{ secrets.MONGODB_CONNECTION }}" > '.env'
           echo "${{ secrets.JWT_ACCESS }}" >> '.env'
-          echo "${{ secrets.GMAIL_RESEND_KEY }}" >> '.env'
           echo "${{ secrets.R2_ACCESS }}" >> '.env'
           echo "${{ secrets.R2_ENDPOINT }}" >> '.env'
           echo "${{ secrets.R2_PUB_URL }}" >> '.env'
           echo "${{ secrets.R2_SECRET_ACCESS }}" >> '.env'
+          echo "${{ secrets.RESEND_API_KEY }}" >> '.env'
           cd ./frontend
           sudo npm install
           sudo npm run build
+          sudo rm -rf /var/www/html/*
           sudo cp -r dist/* /var/www/html
           sudo systemctl restart nginx
           sudo pm2 restart "express-server"

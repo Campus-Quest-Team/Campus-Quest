@@ -1,102 +1,114 @@
-
 import { useEffect, useState } from 'react';
-import isToday from '../todayChecker';
-//types
-import type { FriendsResponse, LeaderboardResponse, CurrentQuestResponse, FriendData, LeaderboardEntry, ProfileData, ProfileResponse, SidebarProps } from '../../types/dashboardTypes';
 import buildPath from '../Path';
-import { clearToken } from '../../loginStorage';
 import { useNavigate } from 'react-router-dom';
+import fullLogo from '../../assets/full_logo.svg';
+import { FaTrophy } from 'react-icons/fa';
+import { MdGroup } from 'react-icons/md';
+import { MdTrackChanges } from 'react-icons/md';
+import { MdCheckCircle, MdCancel } from 'react-icons/md';
+import { FaBinoculars } from 'react-icons/fa';
+import '../../styles/Sidebar.css';
+import { toast } from 'react-toastify';
+
+
+// types
+import type {
+    FriendsResponse,
+    LeaderboardResponse,
+    FriendData,
+    LeaderboardEntry,
+    ProfileData,
+    ProfileResponse,
+    SidebarProps
+} from '../../types/dashboardTypes';
+import { handleJWTError } from '../handleJWTError';
 
 export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
     const navigate = useNavigate();
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [friends, setFriends] = useState<FriendData[]>([]);
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-    const [currentQuest, setCurrentQuest] = useState<CurrentQuestResponse | null>(null);
-
-    const handleLogout = () => {
-        clearToken();
-        navigate('/login');
-    };
-
+    const [hasCompletedToday, setHasCompletedToday] = useState<boolean | null>(null);
 
     useEffect(() => {
-        // Fetch profile data
-        fetch(buildPath('api/getProfile'), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${loginInfo.accessToken}`,
-            },
-            body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
-        })
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch profile');
-                return res.json();
-            })
-            .then((data: ProfileResponse) => {
-                setProfile(data.profileData);
-            })
-            .catch(err => {
+        const fetchData = async () => {
+            try {
+                // Profile
+                const profileRes = await fetch(buildPath('api/getProfile'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${loginInfo.accessToken}`,
+                    },
+                    body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
+                });
+
+                const profileData: ProfileResponse = await profileRes.json();
+                if (handleJWTError(profileData, navigate)) return;
+                setProfile(profileData.profileData);
+
+                // Friends
+                const friendsRes = await fetch(buildPath('api/fetchFriends'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
+                });
+
+                const friendsData: FriendsResponse = await friendsRes.json();
+                if (handleJWTError(friendsData, navigate)) return;
+                setFriends(friendsData.friends);
+
+                // Leaderboard
+                const lbRes = await fetch(buildPath('api/fetchScoreboard'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${loginInfo.accessToken}`,
+                    },
+                    body: JSON.stringify({ jwtToken: loginInfo.accessToken }),
+                });
+
+                const lbData: LeaderboardResponse = await lbRes.json();
+                if (handleJWTError(lbData, navigate)) return;
+                setLeaderboard(lbData.scoreboard);
+
+                // Has completed today's quest
+                const completionRes = await fetch(buildPath('api/hasCompletedCurrentQuest'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: loginInfo.userId,
+                        jwtToken: loginInfo.accessToken,
+                    }),
+                });
+
+                const completionData = await completionRes.json();
+                if (handleJWTError(completionData, navigate)) return;
+                setHasCompletedToday(completionData.hasCompleted);
+
+            } catch (err) {
                 console.error(err);
+                toast.error("Network error. Redirecting to login.");
                 navigate('/login');
-            });
+            }
+        };
 
-        fetch(buildPath('api/fetchFriends'), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${loginInfo.accessToken}`,
-            },
-            body: JSON.stringify({ userId: loginInfo.userId, jwtToken: loginInfo.accessToken }),
-        })
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch friends');
-                return res.json();
-            })
-            .then((data: FriendsResponse) => {
-                setFriends(data.friends);
-            })
-            .catch(err => console.error('Friend fetch error:', err));
+        fetchData();
+    }, [loginInfo.accessToken, loginInfo.userId, navigate]);
 
-        fetch(buildPath('api/fetchScoreboard'), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${loginInfo.accessToken}`,
-            },
-            body: JSON.stringify({ jwtToken: loginInfo.accessToken }),
-        })
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch leaderboard');
-                return res.json();
-            })
-            .then((data: LeaderboardResponse) => {
-                setLeaderboard(data.scoreboard);
-            })
-            .catch(err => console.error('Leaderboard fetch error:', err));
 
-        // Fetch current quest
-        fetch(buildPath('api/currentQuest'), {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-            .then(res => res.json())
-            .then((data: CurrentQuestResponse) => {
-                if (data.success) {
-                    setCurrentQuest(data);
-                } else {
-                    console.error('Quest fetch failed');
-                }
-            })
-            .catch(console.error);
-    }, []);
-    const questsToday = profile?.questPosts?.filter(post => isToday(post.timeStamp)).length ?? 0;
     return (
-        < div className="sidebar" >
-            <h2>Campus Quest</h2>
+        <div className="sidebar">
+            {/* Logo */}
+            <div className="logo-wrapper">
+                <img src={fullLogo} alt="Campus Quest Logo" className="campus-quest-logo" />
+            </div>
+
+            {/* Profile */}
             <div className="profile-section">
                 <div className="profile-picture-wrapper">
                     <img
@@ -106,9 +118,13 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                     />
                     <div
                         className="edit-icon"
-                        onClick={() => profile && onProfileChange(profile)}
-                        style={{ cursor: profile ? 'pointer' : 'not-allowed', opacity: profile ? 1 : 0.5 }}
-                    >✏️</div>
+                        onClick={() => profile && onProfileChange()}
+                        style={{ cursor: profile ? 'pointer' : 'not-allowed' }}
+                    >
+                        <FaBinoculars size={18} />
+                    </div>
+
+
                 </div>
 
                 <div className="stats">
@@ -121,43 +137,48 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                         <div className="stat-label">Quests Complete</div>
                     </div>
                     <div className="stat-item">
-                        <div className="stat-number">{`${questsToday == 0 ? 'Incomplete' : 'Complete'}`}</div>
+                        {hasCompletedToday === null ? (
+                            <span>⏳</span>
+                        ) : hasCompletedToday ? (
+                            <MdCheckCircle color="green" size={20} title="Complete" />
+                        ) : (
+                            <MdCancel color="crimson" size={20} title="Incomplete" />
+                        )}
                         <div className="stat-label">Today's Quest</div>
                     </div>
                 </div>
             </div>
 
-            <div className="current-quest-section">
-                <h2>🎯 Current Quest</h2>
-                {currentQuest ? (
-                    <div className="current-quest">
-                        <p><strong>Quest ID:</strong> {currentQuest.currentQuest.questId}</p>
-                        <p><strong>Description:</strong> {currentQuest.questDescription}</p>
-                        <p><strong>Issued:</strong> {new Date(currentQuest.timestamp).toLocaleString()}</p>
-                    </div>
-                ) : (
-                    <p>Loading current quest...</p>
-                )}
-            </div>
-
+            {/* Friend Leaderboard */}
             <div className="friends-section">
-                <h2>Friend Leaderboard</h2>
+                <h2>
+                    <span style={{ verticalAlign: 'middle', marginRight: '6px' }}>
+                        <MdGroup />
+                    </span>
+                    Friends
+                </h2>
+
                 {friends.length === 0 ? (
                     <p>No friends added yet.</p>
                 ) : (
                     [...friends]
                         .sort((a, b) => b.questCompleted - a.questCompleted)
                         .map((friend, index) => (
-                            <div key={friend.userId} className="friend-entry">
-                                <span>#{index + 1}</span> 👤 {friend.displayName} – {friend.questCompleted} quests
+                            <div key={`${friend.displayName}-${index}`} className="friend-entry">
+                                <img src={friend.pfp} alt={`${friend.displayName}'s profile`} className="friend-pfp" />
+                                <span>
+                                    {friend.questCompleted} <MdTrackChanges size={12} /> {friend.displayName}
+                                </span>
                             </div>
                         ))
+
                 )}
             </div>
 
-
+            {/* Global Leaderboard */}
             <div className="leaderboard-section">
-                <h2>🏆 Leaderboard</h2>
+                <h2><span style={{ paddingTop: '2px', marginRight: '6px' }}><FaTrophy /></span>Leaderboard</h2>
+
                 {leaderboard.length === 0 ? (
                     <p>Loading leaderboard...</p>
                 ) : (
@@ -166,19 +187,13 @@ export function DashboardSidebar({ loginInfo, onProfileChange }: SidebarProps) {
                         .slice(0, 5)
                         .map((entry, i) => (
                             <div key={entry.userId} className="leaderboard-entry">
-                                <span className="leaderboard-rank">#{i + 1}</span> –
-                                <span className="leaderboard-quests"><strong>{entry.questCompleted}</strong> quests</span>
+                                <span className="leaderboard-rank">#{i + 1}</span> –{' '}
+                                <span className="leaderboard-quests"><strong>{entry.questCompleted}</strong> <MdTrackChanges size={10} /></span>{' '}
                                 <span className="leaderboard-name">{entry.displayName}</span>
                             </div>
                         ))
                 )}
             </div>
-
-
-            <button className="logout-button" onClick={handleLogout}>
-                🚪 Logout
-            </button>
-
         </div >
     );
 }

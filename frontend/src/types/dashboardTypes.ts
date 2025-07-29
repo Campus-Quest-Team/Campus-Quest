@@ -36,12 +36,14 @@ export interface FeedResponse {
   jwtToken: string;
 }
 
-export interface ProfileData {
-  questCompleted: number;
+export type ProfileData = {
   displayName: string;
+  bio: string;
   pfp: string;
-  questPosts: QuestPost[];
-}
+  questPosts?: FeedPost[];
+  questCompleted: number;
+};
+
 
 export interface ProfileResponse {
   profileData: ProfileData;
@@ -78,24 +80,34 @@ export interface CurrentQuestResponse {
   currentQuest: {
     questId: string;
     timestamp: string;
-    questData: any; // refine this if you know its shape
+    questData: Record<string, unknown>;
+    questDescription: string;
+
   };
-  questDescription: string;
   timestamp: string;
 }
 
 export interface PostCardProps {
+  userId: string;
+  jwtToken: string;
+  postId: string;
   user: string;
   title: string;
   imageUrl: string;
+  timeStamp: string;
   caption: string;
+  liked: boolean;
   likes: number;
   pfp: string;
+  onHide: (postId: string) => void;
+  isProfileView?: boolean;
+  isFriend?: boolean;
+  friendId?: string;
 }
 
 export interface SidebarProps {
   loginInfo: LoginInfo;
-  onProfileChange: (profile: ProfileData) => void;
+  onProfileChange: () => void;
 }
 
 export interface ProfileEditProps {

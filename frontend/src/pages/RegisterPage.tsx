@@ -4,6 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 import buildPath from '../components/Path';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Login.css';
+import { toast } from 'react-toastify';
 
 interface UserPayload {
   userId: number;
@@ -40,26 +41,31 @@ function RegisterPage() {
       email: false,
     });
 
-
     if (registerName.length < 2) {
       setErrors(prev => ({ ...prev, username: true }));
-      return setMessage('Username must have 2+ characters');
+      toast.error('Username must have 2+ characters');
+      return;
     }
     if (registerPassword.length < 5) {
       setErrors(prev => ({ ...prev, password: true }));
-      return setMessage('Password must have 5+ characters');
+      toast.error('Password must have 5+ characters');
+      return;
     }
     if (registerFName.length < 2) {
       setErrors(prev => ({ ...prev, firstName: true }));
-      return setMessage('First name must have 2+ characters');
+      toast.error('First name must have 2+ characters');
+      return;
     }
     if (!registerEmail.includes('@') || !registerEmail.includes('.')) {
       setErrors(prev => ({ ...prev, email: true }));
-      return setMessage('Invalid email format');
+      toast.error('Invalid email format');
+      return;
     }
 
-    if (BadWordsChecker(registerName) || BadWordsChecker(registerFName) || BadWordsChecker(registerLName))
-      return setMessage("It's okay to spread positivity too, you know?");
+    if (BadWordsChecker(registerName) || BadWordsChecker(registerFName) || BadWordsChecker(registerLName)) {
+      toast.warn("It's okay to spread positivity too, you know?");
+      return;
+    }
 
     const packet = {
       login: registerName,
@@ -77,7 +83,10 @@ function RegisterPage() {
       });
 
       const data = JSON.parse(await res.text());
-      if (data.error) return setMessage(data.error);
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
 
       const { accessToken } = data;
       const decoded = jwtDecode<UserPayload>(accessToken);
@@ -94,15 +103,19 @@ function RegisterPage() {
       });
 
       const emailData = JSON.parse(await emailRes.text());
-      if (emailData.error) return setMessage(emailData.error);
+      if (emailData.error) {
+        toast.error(emailData.error);
+        return;
+      }
 
-      setMessage('Account created! Check your email to verify your account. ✅');
-      alert('Registration successful!\nPlease check your email to verify your account.');
-
+      toast.success('Account created! Check your email to verify ✅');
+      setMessage('');
     } catch (err) {
-      alert(String(err));
+      console.error(err);
+      toast.error('Something went wrong. Please try again.');
     }
   }
+
 
   return (
     <div className="login-page-wrapper">
