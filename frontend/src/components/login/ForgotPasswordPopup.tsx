@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify'; // make sure this is already imported
 import buildPath from '../Path';
 import '../../styles/ForgotPassword.css';
 
@@ -7,8 +8,11 @@ export default function ForgotPasswordPopup({ onClose }: { onClose: () => void; 
     const [message, setMessage] = useState('');
     const [submitted, setSubmitted] = useState(false);
 
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const loadingToastId = toast.loading('Sending reset link...');
 
         try {
             const response = await fetch(buildPath('api/forgot-password'), {
@@ -18,16 +22,32 @@ export default function ForgotPasswordPopup({ onClose }: { onClose: () => void; 
             });
 
             const data = await response.json();
-            setMessage(data.message || 'Check your email for reset instructions.');
+            const resultMessage = data.message || 'Check your email for reset instructions.';
+
+            toast.update(loadingToastId, {
+                render: resultMessage,
+                type: 'success',
+                isLoading: false,
+                autoClose: 4000,
+            });
+
+            setMessage(resultMessage);
             setSubmitted(true);
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                setMessage(error.message);
-            } else {
-                setMessage('Something went wrong. Please try again.');
-            }
+            const errMessage =
+                error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+
+            toast.update(loadingToastId, {
+                render: errMessage,
+                type: 'error',
+                isLoading: false,
+                autoClose: 4000,
+            });
+
+            setMessage(errMessage);
         }
     };
+
 
     return (
         <div className="forgot-popup-overlay">
