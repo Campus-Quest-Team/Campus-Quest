@@ -53,6 +53,7 @@ export function Settings({ loginInfo, onClose, onProfileUpdate }: SettingsProps)
             if (res.ok && data.success) {
                 toast.success("Profile details updated successfully!");
                 onProfileUpdate();
+                onClose();
             } else {
                 toast.error("Failed to update profile details.");
             }
