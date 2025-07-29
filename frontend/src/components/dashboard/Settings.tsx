@@ -9,7 +9,12 @@ import '../../styles/Settings.css';
 import type { ProfileResponse } from "../../types/APITypes";
 import { MdCancel, MdCheck } from "react-icons/md";
 
-export function Settings({ loginInfo, onClose }: PopupProps) {
+interface SettingsProps extends PopupProps {
+    onProfileUpdate: () => void;
+}
+
+
+export function Settings({ loginInfo, onClose, onProfileUpdate }: SettingsProps) {
     const navigate = useNavigate();
     const [bio, setBio] = useState('');
     const [displayName, setDisplayName] = useState('');
@@ -30,9 +35,7 @@ export function Settings({ loginInfo, onClose }: PopupProps) {
         }
     }
 
-    const handleEditSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
+    const handleEditSubmit = async () => {
         // Save display name and bio
         try {
             const res = await fetch(buildPath('api/editProfile'), {
@@ -49,6 +52,7 @@ export function Settings({ loginInfo, onClose }: PopupProps) {
             const data = await res.json();
             if (res.ok && data.success) {
                 toast.success("Profile details updated successfully!");
+                onProfileUpdate();
             } else {
                 toast.error("Failed to update profile details.");
             }
@@ -71,6 +75,7 @@ export function Settings({ loginInfo, onClose }: PopupProps) {
                 const data = await res.json();
                 if (res.ok && data.success) {
                     toast.success("Profile picture updated successfully!");
+                    onProfileUpdate();
                 } else {
                     toast.error("Failed to update profile picture.");
                 }
@@ -79,6 +84,7 @@ export function Settings({ loginInfo, onClose }: PopupProps) {
             }
         }
     };
+
 
     const handleToggleNotifications = async () => {
         const payload = {
@@ -173,9 +179,11 @@ export function Settings({ loginInfo, onClose }: PopupProps) {
                             onBlur={() => setIsEditingName(false)}
                         />
                     ) : (
-                        <span onClick={() => setIsEditingName(true)}>
-                            {displayName || 'Your Name'} <span className="settings-edit-icon"><FiEdit3 /></span>
+                        <span className="settings-edit-wrapper" onClick={() => setIsEditingName(true)}>
+                            <span className="settings-edit-text">{displayName || 'Your Name'}</span>
+                            <span className="settings-edit-icon" > <FiEdit3 /> </span>
                         </span>
+
                     )}
                 </div>
 
@@ -188,9 +196,10 @@ export function Settings({ loginInfo, onClose }: PopupProps) {
                             autoFocus
                         />
                     ) : (
-                        <p onClick={() => setIsEditingBio(true)}>
-                            {bio || 'Your bio here...'} <span className="settings-edit-icon"><FiEdit3 /></span>
-                        </p>
+                        <span className="settings-edit-wrapper" onClick={() => setIsEditingBio(true)}>
+                            <span className="settings-edit-text">{bio || 'Your bio here...'}</span>
+                            <span className="settings-edit-icon" > <FiEdit3 /> </span>
+                        </span>
                     )}
                 </div>
 

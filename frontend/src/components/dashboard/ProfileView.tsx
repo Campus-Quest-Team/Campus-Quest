@@ -73,8 +73,7 @@ export function ProfileView({ loginInfo, onClose }: PopupProps) {
             if (el) observer.unobserve(el);
         };
     }, [loadMore]);
-
-    useEffect(() => {
+    const refreshProfile = useCallback(() => {
         fetch(buildPath('api/getProfile'), {
             method: 'POST',
             headers: {
@@ -89,7 +88,6 @@ export function ProfileView({ loginInfo, onClose }: PopupProps) {
             .then(res => res.json())
             .then((data: ProfileResponse | { error: string }) => {
                 if (handleJWTError(data, navigate)) return;
-
                 const profileData = (data as ProfileResponse).profileData;
                 setProfile(profileData);
                 setPosts((profileData.questPosts || []).map(qp => ({
@@ -109,7 +107,11 @@ export function ProfileView({ loginInfo, onClose }: PopupProps) {
                 console.error('Profile fetch error:', err);
                 toast.error("Server error while loading profile.");
             });
-    }, [loginInfo, navigate]);
+    }, [loginInfo.userId, loginInfo.accessToken, navigate]);
+
+    useEffect(() => {
+        refreshProfile();
+    }, [refreshProfile]);
 
     const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
@@ -189,9 +191,14 @@ export function ProfileView({ loginInfo, onClose }: PopupProps) {
 
                 {showSettings && (
                     <div className="settings-wrapper">
-                        <Settings loginInfo={loginInfo} onClose={() => setShowSettings(false)} />
+                        <Settings
+                            loginInfo={loginInfo}
+                            onClose={() => setShowSettings(false)}
+                            onProfileUpdate={refreshProfile} // <- pass here
+                        />
                     </div>
                 )}
+
             </div>
         </div>
     );
